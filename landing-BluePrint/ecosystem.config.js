@@ -40,13 +40,13 @@ module.exports = {
       // ── Environment — Development ───────────────────────
       env: {
         NODE_ENV: "development",
-        PORT: 3000,
+        PORT: 3020,
       },
 
       // ── Environment — Production ────────────────────────
       env_production: {
         NODE_ENV: "production",
-        PORT: 3000,
+        PORT: 3020,
 
         // ▸ CHANGE THESE before going live ◂
         ADMIN_TOKEN: "CHANGE_ME_STRONG_SECRET_32_CHARS",  // for GET /api/subscribe
