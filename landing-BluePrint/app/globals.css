@@ -1,0 +1,362 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    background-color: #060b18;
+    color: white;
+    font-family: var(--font-manrope), system-ui, sans-serif;
+  }
+  * {
+    box-sizing: border-box;
+  }
+}
+
+/* =============================================
+   GRID / DOT BACKGROUND PATTERNS
+   ============================================= */
+.grid-pattern {
+  background-image:
+    linear-gradient(rgba(59, 130, 246, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.04) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+.dot-pattern {
+  background-image: radial-gradient(circle, rgba(99, 102, 241, 0.18) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* =============================================
+   SCROLL REVEAL ANIMATIONS
+   ============================================= */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger delays for child elements */
+.stagger > *:nth-child(1) { transition-delay: 0ms; }
+.stagger > *:nth-child(2) { transition-delay: 80ms; }
+.stagger > *:nth-child(3) { transition-delay: 160ms; }
+.stagger > *:nth-child(4) { transition-delay: 240ms; }
+.stagger > *:nth-child(5) { transition-delay: 320ms; }
+.stagger > *:nth-child(6) { transition-delay: 400ms; }
+
+/* =============================================
+   GLASS CARD
+   ============================================= */
+.glass {
+  background: rgba(255, 255, 255, 0.025);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* =============================================
+   GRADIENT TEXT
+   ============================================= */
+.gradient-text {
+  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #22d3ee 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.gradient-text-blue {
+  background: linear-gradient(90deg, #60a5fa, #22d3ee);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* =============================================
+   GLOW EFFECTS
+   ============================================= */
+.blue-glow {
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.25),
+              0 0 30px rgba(59, 130, 246, 0.12),
+              0 0 80px rgba(59, 130, 246, 0.04);
+}
+.violet-glow {
+  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.25),
+              0 0 30px rgba(139, 92, 246, 0.12);
+}
+.popular-card-glow {
+  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.5),
+              0 0 40px rgba(99, 102, 241, 0.15),
+              0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+/* =============================================
+   SHIMMER ANIMATION (for live badge)
+   ============================================= */
+.shimmer-badge {
+  background: linear-gradient(90deg,
+    rgba(96, 165, 250, 0.6) 0%,
+    rgba(255, 255, 255, 0.9) 40%,
+    rgba(96, 165, 250, 0.6) 100%
+  );
+  background-size: 200% auto;
+  animation: shimmer 2.5s linear infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* =============================================
+   PING ANIMATION (for live indicator)
+   ============================================= */
+@keyframes live-ring {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+.live-ring {
+  animation: live-ring 1.8s ease-out infinite;
+}
+
+/* =============================================
+   FLOAT ANIMATION (for hero badges)
+   ============================================= */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+.float { animation: float 4s ease-in-out infinite; }
+.float-delayed { animation: float 4s ease-in-out 1.5s infinite; }
+
+/* =============================================
+   COUNTER NUMBER STYLE
+   ============================================= */
+.counter-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* =============================================
+   PRICING GRADIENT BORDER
+   ============================================= */
+.pricing-popular {
+  background: linear-gradient(135deg, #1e1b4b, #0d1526);
+  border: 1px solid rgba(99, 102, 241, 0.5);
+}
+
+/* =============================================
+   INTEGRATION CARD HOVER
+   ============================================= */
+.integration-card:hover {
+  border-color: rgba(59, 130, 246, 0.3);
+  background: rgba(59, 130, 246, 0.04);
+}
+
+/* =============================================
+   SCROLLBAR
+   ============================================= */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: #060b18; }
+::-webkit-scrollbar-thumb { background: #1d3160; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
+
+/* =============================================
+   SECTION HEADING UNDERLINE ACCENT
+   ============================================= */
+.section-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* =============================================
+   INNOVATION HEX / PILL
+   ============================================= */
+.innovation-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.2s;
+  cursor: default;
+}
+.innovation-pill:hover {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+  transform: translateY(-2px);
+}
+
+/* =============================================
+   TYPEWRITER CURSOR
+   ============================================= */
+@keyframes tw-cursor-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+.tw-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 0.82em;
+  background: #60a5fa;
+  margin-left: 2px;
+  border-radius: 1px;
+  vertical-align: middle;
+  animation: tw-cursor-blink 0.75s step-end infinite;
+}
+
+/* =============================================
+   INFINITE MARQUEE (integrations + ticker)
+   ============================================= */
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.marquee-inner {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll 32s linear infinite;
+}
+.marquee-inner:hover { animation-play-state: paused; }
+
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.ticker-inner {
+  display: flex;
+  width: max-content;
+  animation: ticker-scroll 38s linear infinite;
+}
+
+/* =============================================
+   SOCIAL PROOF TOAST
+   ============================================= */
+@keyframes toast-slide-in {
+  from { transform: translateX(calc(100% + 1.5rem)); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+@keyframes toast-slide-out {
+  from { transform: translateX(0); opacity: 1; }
+  to   { transform: translateX(calc(100% + 1.5rem)); opacity: 0; }
+}
+.toast-in  { animation: toast-slide-in  0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.toast-out { animation: toast-slide-out 0.38s ease-in forwards; }
+
+/* =============================================
+   ANIMATED GRADIENT BORDER (popular pricing)
+   ============================================= */
+@keyframes border-spin {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.grad-border-wrap {
+  padding: 1.5px;
+  border-radius: 18px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #22d3ee, #6366f1, #3b82f6);
+  background-size: 300%;
+  animation: border-spin 3s linear infinite;
+  box-shadow: 0 0 40px rgba(99, 102, 241, 0.2), 0 20px 60px rgba(0,0,0,0.5);
+}
+.grad-border-inner {
+  background: linear-gradient(135deg, #111827, #0d1526);
+  border-radius: 17px;
+  height: 100%;
+}
+
+/* =============================================
+   PULSE RING (primary CTA button)
+   ============================================= */
+@keyframes btn-ring-pulse {
+  0%   { box-shadow: 0 0 0 0px rgba(59, 130, 246, 0.55); }
+  70%  { box-shadow: 0 0 0 14px rgba(59, 130, 246, 0); }
+  100% { box-shadow: 0 0 0 0px rgba(59, 130, 246, 0); }
+}
+.btn-pulse { animation: btn-ring-pulse 2.4s ease-out infinite; }
+
+/* =============================================
+   COUNTER GLOW
+   ============================================= */
+.counter-glow {
+  text-shadow: 0 0 24px rgba(96, 165, 250, 0.45), 0 0 60px rgba(96, 165, 250, 0.15);
+}
+
+/* =============================================
+   FEATURE CARD STAGGER REVEAL
+   ============================================= */
+.feature-card {
+  opacity: 0;
+  transform: translateY(22px) scale(0.98);
+  transition: opacity 0.55s ease, transform 0.55s ease, border-color 0.3s, box-shadow 0.3s;
+}
+.feature-card.fc-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+.feature-card:nth-child(1) { transition-delay: 0ms; }
+.feature-card:nth-child(2) { transition-delay: 80ms; }
+.feature-card:nth-child(3) { transition-delay: 160ms; }
+.feature-card:nth-child(4) { transition-delay: 240ms; }
+.feature-card:nth-child(5) { transition-delay: 320ms; }
+.feature-card:nth-child(6) { transition-delay: 400ms; }
+
+/* =============================================
+   LIVE ACTIVITY DOT (hero badge extra polish)
+   ============================================= */
+@keyframes ripple-out {
+  0%   { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(3);  opacity: 0; }
+}
+.ripple-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: currentColor;
+  animation: ripple-out 1.8s ease-out infinite;
+}
+
+/* =============================================
+   SHIMMER SKELETON (loading state in dashboard)
+   ============================================= */
+@keyframes shimmer-bar {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+.shimmer-bar {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.04) 0%,
+    rgba(255,255,255,0.10) 40%,
+    rgba(255,255,255,0.04) 100%
+  );
+  background-size: 200% auto;
+  animation: shimmer-bar 2s linear infinite;
+}
+
+/* =============================================
+   NUMBER FLIP ANIMATION (stat counters)
+   ============================================= */
+@keyframes num-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+.num-pop { animation: num-pop 0.35s ease-out; }
