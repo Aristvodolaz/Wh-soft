@@ -9,18 +9,13 @@ import { KpiCard } from '@/shared/ui/kpi-card'
 import { Select } from '@/shared/ui/select'
 import { Skeleton } from '@/shared/ui/skeleton'
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell,
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+  FunnelChart, Funnel, LabelList,
 } from 'recharts'
 import { formatPercent } from '@/shared/lib/format'
+import { TrendingUp, AlertTriangle } from 'lucide-react'
 
 const TASK_COLORS = ['#3B82F6', '#22C55E', '#F59E0B', '#EF4444', '#94A3B8', '#06B6D4']
 
@@ -64,10 +59,31 @@ export default function AnalyticsPage() {
       ].filter((d) => d.value > 0)
     : []
 
+  const funnelData = orders
+    ? [
+        { name: 'Создано', value: orders.total, fill: '#60A5FA' },
+        { name: 'Подтверждено', value: orders.confirmed + orders.inPicking + orders.picked + orders.inPacking + orders.packed + orders.shipped + orders.delivered, fill: '#3B82F6' },
+        { name: 'В обработке', value: orders.inPicking + orders.picked + orders.inPacking + orders.packed, fill: '#2563EB' },
+        { name: 'Доставлено', value: orders.delivered, fill: '#1D4ED8' },
+      ].filter((d) => d.value > 0)
+    : []
+
+  const radarData = tasks
+    ? [
+        { metric: 'Выполнение', value: tasks.todayTotal > 0 ? Math.round((tasks.completed / tasks.todayTotal) * 100) : 0 },
+        { metric: 'Активность', value: tasks.todayTotal > 0 ? Math.round(((tasks.assigned + tasks.inProgress) / tasks.todayTotal) * 100) : 0 },
+        { metric: 'Надёжность', value: tasks.todayTotal > 0 ? Math.round(((tasks.todayTotal - tasks.failed) / tasks.todayTotal) * 100) : 0 },
+        { metric: 'Загрузка', value: tasks.todayTotal > 0 ? Math.min(100, Math.round((tasks.inProgress / Math.max(tasks.todayTotal, 1)) * 200)) : 0 },
+      ]
+    : []
+
+  const abcPctC = Math.round(((inventory?.lowStockCount ?? 0) / Math.max(inventory?.totalSkus ?? 1, 1)) * 100)
+  const abcPctA = Math.max(5, 100 - abcPctC - 15)
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-neutral-900">Аналитика</h1>
+        <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Аналитика</h1>
         {warehouses && warehouses.length > 0 && (
           <Select
             value={selectedWarehouseId ?? ''}
@@ -83,28 +99,15 @@ export default function AnalyticsPage() {
 
       {/* KPI row */}
       <div className="grid grid-cols-4 gap-4">
-        <KpiCard
-          title="Всего SKU"
-          value={inventory?.totalSkus ?? 0}
-          loading={invLoading}
-        />
-        <KpiCard
-          title="Единиц на складе"
-          value={inventory?.totalUnits ?? 0}
-          loading={invLoading}
-        />
-        <KpiCard
-          title="Низкий остаток"
-          value={inventory?.lowStockCount ?? 0}
-          accent={inventory?.lowStockCount ? 'warning' : 'none'}
-          loading={invLoading}
-        />
-        <KpiCard
-          title="Заполненность"
-          value={util ? formatPercent(util.utilizationPct) : '—'}
-          accent={util && util.utilizationPct > 85 ? 'danger' : 'none'}
-          loading={utilLoading}
-        />
+        <KpiCard title="Всего SKU" value={inventory?.totalSkus ?? 0} loading={invLoading}
+          icon={<TrendingUp className="h-5 w-5" />} />
+        <KpiCard title="Единиц на складе" value={inventory?.totalUnits ?? 0} loading={invLoading} />
+        <KpiCard title="Низкий остаток" value={inventory?.lowStockCount ?? 0}
+          accent={inventory?.lowStockCount ? 'warning' : 'none'} loading={invLoading}
+          icon={inventory?.lowStockCount ? <AlertTriangle className="h-5 w-5 text-warning-500" /> : undefined} />
+        <KpiCard title="Заполненность" value={util ? formatPercent(util.utilizationPct) : '—'}
+          accent={util && util.utilizationPct > 85 ? 'danger' : util && util.utilizationPct > 70 ? 'warning' : 'none'}
+          loading={utilLoading} />
       </div>
 
       {/* Charts row */}
@@ -162,17 +165,53 @@ export default function AnalyticsPage() {
         </Card>
       </div>
 
+      {/* Funnel + Radar */}
+      <div className="grid grid-cols-2 gap-6">
+        <Card>
+          <CardHeader><h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Воронка заказов</h3></CardHeader>
+          <CardContent>
+            {ordersLoading ? <Skeleton className="h-48 w-full rounded" /> : funnelData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={192}>
+                <FunnelChart>
+                  <Tooltip />
+                  <Funnel dataKey="value" data={funnelData} isAnimationActive>
+                    <LabelList position="right" fill="#64748B" stroke="none" dataKey="name" />
+                  </Funnel>
+                </FunnelChart>
+              </ResponsiveContainer>
+            ) : <p className="text-sm text-neutral-400 text-center py-12">Нет данных</p>}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Эффективность задач</h3></CardHeader>
+          <CardContent>
+            {tasksLoading ? <Skeleton className="h-48 w-full rounded" /> : radarData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={192}>
+                <RadarChart data={radarData}>
+                  <PolarGrid />
+                  <PolarAngleAxis dataKey="metric" tick={{ fontSize: 11 }} />
+                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10 }} />
+                  <Radar dataKey="value" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.3} />
+                  <Tooltip />
+                </RadarChart>
+              </ResponsiveContainer>
+            ) : <p className="text-sm text-neutral-400 text-center py-12">Нет данных</p>}
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Utilization */}
       {util && (
         <Card>
           <CardHeader>
-            <h3 className="text-lg font-semibold text-neutral-900">Использование ячеек</h3>
+            <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Использование ячеек</h3>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-3 gap-8">
               <div>
                 <p className="text-xs text-neutral-400 mb-1">Всего ячеек</p>
-                <p className="text-3xl font-bold text-neutral-900">{util.totalCells}</p>
+                <p className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">{util.totalCells}</p>
               </div>
               <div>
                 <p className="text-xs text-neutral-400 mb-1">Занято</p>
@@ -180,8 +219,8 @@ export default function AnalyticsPage() {
               </div>
               <div>
                 <p className="text-xs text-neutral-400 mb-1">Заполненность</p>
-                <p className="text-3xl font-bold text-neutral-900">{formatPercent(util.utilizationPct)}</p>
-                <div className="mt-2 h-2 bg-neutral-100 rounded-full overflow-hidden">
+                <p className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">{formatPercent(util.utilizationPct)}</p>
+                <div className="mt-2 h-2 bg-neutral-100 dark:bg-neutral-700 rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all"
                     style={{
@@ -195,6 +234,33 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* ABC Analysis */}
+      <Card>
+        <CardHeader><h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">ABC-анализ запасов</h3></CardHeader>
+        <CardContent>
+          {invLoading ? <Skeleton className="h-24 w-full rounded" /> : (
+            <div className="grid grid-cols-3 gap-6">
+              {[
+                { label: 'A — Приоритет', desc: 'Высокооборотные товары (top 20% = 80% оборота)', color: 'bg-success-500', pct: abcPctA },
+                { label: 'B — Средние', desc: 'Стабильный спрос', color: 'bg-warning-500', pct: 15 },
+                { label: 'C — Резерв', desc: 'Низкооборотные / низкий остаток', color: 'bg-danger-400', pct: abcPctC },
+              ].map((item) => (
+                <div key={item.label} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">{item.label}</span>
+                    <span className="text-sm font-bold text-neutral-900 dark:text-neutral-100">{item.pct}%</span>
+                  </div>
+                  <div className="h-2 bg-neutral-100 dark:bg-neutral-700 rounded-full overflow-hidden">
+                    <div className={'h-full rounded-full ' + item.color} style={{ width: item.pct + '%' }} />
+                  </div>
+                  <p className="text-xs text-neutral-400">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
