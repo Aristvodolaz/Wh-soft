@@ -55,28 +55,44 @@ async function bootstrap() {
       .setTitle('WMS Platform API')
       .setDescription(
         `
+## [RU] Описание API
+**Полнофункциональная SaaS-система управления складом (WMS)**
+
+### Аутентификация
+Используйте Bearer JWT токен в заголовке Authorization:
+\`Authorization: Bearer <access_token>\`
+
+### Мультитенантность
+Все ресурсы разделены по Tenant ID. Доступ осуществляется только к данным вашей организации.
+
+### Ограничение запросов (Rate Limiting)
+По умолчанию: 100 запросов в 60 секунд на один IP-адрес.
+
+---
+
+## [EN] API Description
 **Production-grade SaaS Warehouse Management System**
 
-## Authentication
+### Authentication
 Use Bearer JWT token in the Authorization header:
 \`Authorization: Bearer <access_token>\`
 
-## Multi-tenancy
+### Multi-tenancy
 All resources are scoped to the authenticated user's tenant.
 
-## Rate Limiting
+### Rate Limiting
 Default: 100 requests per 60 seconds per IP.
       `.trim(),
       )
       .setVersion('1.0')
       .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'JWT')
-      .addTag('health', 'Health & readiness checks')
-      .addTag('auth', 'Authentication — login, refresh, mobile PIN')
-      .addTag('warehouses', 'Warehouse & zone management')
-      .addTag('inventory', 'Inventory & stock management')
-      .addTag('orders', 'Order management')
-      .addTag('tasks', 'Warehouse task management')
-      .addTag('analytics', 'Analytics & KPI dashboards')
+      .addTag('health', 'Проверка состояния — Health & readiness checks')
+      .addTag('auth', 'Авторизация — login, refresh, mobile PIN')
+      .addTag('warehouses', 'Склады и зоны — Warehouse & zone management')
+      .addTag('inventory', 'Инвентаризация и стоки — Inventory & stock management')
+      .addTag('orders', 'Заказы — Order management')
+      .addTag('tasks', 'Задачи склада — Warehouse task management')
+      .addTag('analytics', 'Аналитика и дашборды — Analytics & KPI dashboards')
       .build();
 
     const document = SwaggerModule.createDocument(app, swaggerConfig);

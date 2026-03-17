@@ -34,10 +34,10 @@ export class AnalyticsController {
   @Get('dashboard')
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.ANALYST)
   @ApiOperation({
-    summary: 'Warehouse dashboard snapshot',
+    summary: 'Обзорный дашборд склада',
     description:
-      'Returns orders (last 30 days), live inventory, tasks (today), and cell utilization ' +
-      'for a given warehouse in a single request.',
+      'Возвращает сводку по заказам (за последние 30 дней), текущие остатки, задачи (на сегодня) ' +
+      'и загруженность ячеек для указанного склада в одном запросе.',
   })
   @ApiQuery({ name: 'warehouseId', type: String, required: true })
   @ApiOkResponse({ type: DashboardResponseDto })
@@ -52,7 +52,7 @@ export class AnalyticsController {
 
   @Get('orders')
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.ANALYST)
-  @ApiOperation({ summary: 'Orders summary by status (last 30 days)' })
+  @ApiOperation({ summary: 'Сводка по заказам (за последние 30 дней)' })
   @ApiQuery({ name: 'warehouseId', type: String, required: true })
   @ApiOkResponse({ type: OrdersSummaryDto })
   getOrdersSummary(
@@ -64,7 +64,7 @@ export class AnalyticsController {
 
   @Get('inventory')
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.ANALYST)
-  @ApiOperation({ summary: 'Inventory summary — SKUs, units, low-stock and out-of-stock counts' })
+  @ApiOperation({ summary: 'Сводка по инвентаризации — товары, ед. хранения, низкие остатки и отсутствие на складе' })
   @ApiQuery({ name: 'warehouseId', type: String, required: true })
   @ApiOkResponse({ type: InventorySummaryDto })
   getInventorySummary(
@@ -76,7 +76,7 @@ export class AnalyticsController {
 
   @Get('tasks')
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.ANALYST)
-  @ApiOperation({ summary: "Today's task counts by status" })
+  @ApiOperation({ summary: 'Статистика задач на сегодня по статусам' })
   @ApiQuery({ name: 'warehouseId', type: String, required: true })
   @ApiOkResponse({ type: TasksSummaryDto })
   getTasksSummary(
@@ -88,7 +88,7 @@ export class AnalyticsController {
 
   @Get('utilization')
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.ANALYST)
-  @ApiOperation({ summary: 'Warehouse cell utilization (% occupied)' })
+  @ApiOperation({ summary: 'Заполненность ячеек склада (% занятых)' })
   @ApiQuery({ name: 'warehouseId', type: String, required: true })
   @ApiOkResponse({ type: WarehouseUtilizationDto })
   getUtilization(
@@ -103,10 +103,10 @@ export class AnalyticsController {
   @Get('employees/:userId/kpi')
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.ANALYST)
   @ApiOperation({
-    summary: 'Employee performance KPIs for a date range',
+    summary: 'KPI эффективности сотрудника за период',
     description:
-      'Returns tasks completed/failed, average completion time, accuracy rate, ' +
-      'and a breakdown by task type for the given user within [from, to).',
+      'Возвращает количество выполненных/проваленных задач, среднее время выполнения, ' +
+      'показатель точности и разбивку по типам задач для пользователя в диапазоне [from, to).',
   })
   @ApiParam({ name: 'userId', type: String })
   @ApiQuery({

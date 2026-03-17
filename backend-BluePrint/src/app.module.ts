@@ -4,6 +4,8 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TerminusModule } from '@nestjs/terminus';
 import { CorrelationIdMiddleware } from './shared/middleware/correlation-id.middleware';
+import type Redis from 'ioredis';
+import { REDIS_CLIENT } from './infrastructure/redis/redis.constants';
 import { ThrottlerRedisStorage } from './infrastructure/redis/throttler-redis.storage';
 
 import appConfig from './config/app.config';
@@ -44,9 +46,9 @@ import { HealthModule } from './health/health.module';
     // Rate limiting — Redis-backed storage for multi-instance safety
     ThrottlerModule.forRootAsync({
       imports: [RedisModule],
-      inject: [ThrottlerRedisStorage],
-      useFactory: (storage: ThrottlerRedisStorage) => ({
-        storage,
+      inject: [REDIS_CLIENT],
+      useFactory: (redis: Redis) => ({
+        storage: new ThrottlerRedisStorage(redis),
         throttlers: [
           {
             ttl: parseInt(process.env.THROTTLE_TTL ?? '60', 10) * 1000,

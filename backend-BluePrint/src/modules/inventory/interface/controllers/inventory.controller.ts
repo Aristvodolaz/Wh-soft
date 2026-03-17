@@ -47,7 +47,7 @@ export class InventoryController {
 
   @Get('products')
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.ANALYST)
-  @ApiOperation({ summary: 'List all products in the tenant catalogue' })
+  @ApiOperation({ summary: 'Список всех товаров в каталоге организации' })
   @ApiOkResponse({ type: [ProductResponseDto] })
   listProducts(@CurrentUser() user: JwtPayload): Promise<ProductResponseDto[]> {
     return this.inventoryService.listProducts(user.tenantId);
@@ -55,7 +55,7 @@ export class InventoryController {
 
   @Post('products')
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER)
-  @ApiOperation({ summary: 'Create a new product in the tenant catalogue' })
+  @ApiOperation({ summary: 'Создать новый товар в каталоге организации' })
   @ApiCreatedResponse({ type: ProductResponseDto })
   createProduct(
     @CurrentUser() user: JwtPayload,
@@ -66,7 +66,7 @@ export class InventoryController {
 
   @Get('products/:productId')
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.ANALYST, Role.WORKER)
-  @ApiOperation({ summary: 'Get a single product by ID' })
+  @ApiOperation({ summary: 'Получить данные о товаре по ID' })
   @ApiParam({ name: 'productId', type: String })
   @ApiOkResponse({ type: ProductResponseDto })
   getProduct(
@@ -78,7 +78,7 @@ export class InventoryController {
 
   @Patch('products/:productId')
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER)
-  @ApiOperation({ summary: 'Update a product' })
+  @ApiOperation({ summary: 'Обновить данные товара' })
   @ApiParam({ name: 'productId', type: String })
   @ApiOkResponse({ type: ProductResponseDto })
   updateProduct(
@@ -93,7 +93,7 @@ export class InventoryController {
 
   @Get()
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.ANALYST)
-  @ApiOperation({ summary: 'List inventory items for a warehouse' })
+  @ApiOperation({ summary: 'Список остатков (inventory items) для склада' })
   @ApiQuery({ name: 'warehouseId', type: String, required: true })
   @ApiOkResponse({ type: [InventoryItemResponseDto] })
   listInventory(
@@ -108,10 +108,10 @@ export class InventoryController {
   @Get('scan')
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.ANALYST, Role.WORKER)
   @ApiOperation({
-    summary: 'Scan a barcode',
+    summary: 'Сканирование штрихкода',
     description:
-      'Resolves a scanned barcode to either a product (EAN/UPC) or a cell barcode. ' +
-      'Returns current stock information for the matched entity.',
+      'Распознает сканированный штрихкод как товар (EAN/UPC) или как ячейку. ' +
+      'Возвращает информацию о текущих остатках для найденного объекта.',
   })
   @ApiQuery({ name: 'barcode', type: String, required: true, example: '5901234123457' })
   @ApiQuery({ name: 'warehouseId', type: String, required: true })
@@ -130,11 +130,11 @@ export class InventoryController {
   @HttpCode(HttpStatus.OK)
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.WORKER)
   @ApiOperation({
-    summary: 'Move inventory between cells',
+    summary: 'Перемещение остатков между ячейками',
     description:
-      'Atomically transfers stock from one cell to another. ' +
-      'Records a completed InventoryMovement and emits the `inventory.moved` domain event. ' +
-      'Fails entirely if insufficient available stock exists.',
+      'Атомарно переводит сток из одной ячейки в другую. ' +
+      'Регистрирует завершенное перемещение и создает событие `inventory.moved`. ' +
+      'Запрос отклоняется, если на источнике недостаточно доступного остатка.',
   })
   @ApiOkResponse({ type: MovementResponseDto })
   move(

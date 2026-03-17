@@ -22,7 +22,7 @@ export class HealthController {
   @Get()
   @Public()
   @HealthCheck()
-  @ApiOperation({ summary: 'Health check — liveness & readiness probe' })
+  @ApiOperation({ summary: 'Проверка состояния (Liveness & Readiness)' })
   check() {
     return this.health.check([
       () => this.db.pingCheck('database'),

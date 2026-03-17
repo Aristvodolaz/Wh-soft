@@ -14,9 +14,13 @@ import { ProductRepository } from './infrastructure/repositories/product.reposit
 
 import { InventoryService } from './application/services/inventory.service';
 import { InventoryController } from './interface/controllers/inventory.controller';
+import { EventBusModule } from '../../infrastructure/event-bus/event-bus.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Product, InventoryItem, Batch, InventoryMovement, Cell])],
+  imports: [
+    TypeOrmModule.forFeature([Product, InventoryItem, Batch, InventoryMovement, Cell]),
+    EventBusModule,
+  ],
   controllers: [InventoryController],
   providers: [
     InventoryService,

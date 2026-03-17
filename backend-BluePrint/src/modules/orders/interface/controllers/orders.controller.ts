@@ -45,7 +45,7 @@ export class OrdersController {
 
   @Get()
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.ANALYST)
-  @ApiOperation({ summary: 'List all orders for the tenant' })
+  @ApiOperation({ summary: 'Получить список всех заказов организации' })
   @ApiQuery({ name: 'warehouseId', type: String, required: false })
   @ApiQuery({ name: 'type', enum: OrderType, required: false })
   @ApiQuery({ name: 'status', enum: OrderStatus, required: false })
@@ -61,7 +61,7 @@ export class OrdersController {
 
   @Get(':orderId')
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.ANALYST, Role.WORKER)
-  @ApiOperation({ summary: 'Get a single order by ID (includes items)' })
+  @ApiOperation({ summary: 'Получить данные одного заказа по ID (включая позиции)' })
   @ApiParam({ name: 'orderId', type: String })
   @ApiOkResponse({ type: OrderResponseDto })
   getOrder(
@@ -75,7 +75,7 @@ export class OrdersController {
 
   @Post()
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER)
-  @ApiOperation({ summary: 'Create a new order' })
+  @ApiOperation({ summary: 'Создать новый заказ' })
   @ApiCreatedResponse({ type: OrderResponseDto })
   createOrder(
     @CurrentUser() user: JwtPayload,
@@ -86,7 +86,7 @@ export class OrdersController {
 
   @Patch(':orderId')
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER)
-  @ApiOperation({ summary: 'Update order header fields (DRAFT only)' })
+  @ApiOperation({ summary: 'Обновить заголовки заказа (только в статусе DRAFT)' })
   @ApiParam({ name: 'orderId', type: String })
   @ApiOkResponse({ type: OrderResponseDto })
   updateOrder(
@@ -101,7 +101,7 @@ export class OrdersController {
 
   @Post(':orderId/items')
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER)
-  @ApiOperation({ summary: 'Add a line item to a DRAFT order' })
+  @ApiOperation({ summary: 'Добавить позицию в черновик заказа (DRAFT)' })
   @ApiParam({ name: 'orderId', type: String })
   @ApiCreatedResponse({ type: OrderItemResponseDto })
   addItem(
@@ -115,7 +115,7 @@ export class OrdersController {
   @Delete(':orderId/items/:itemId')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER)
-  @ApiOperation({ summary: 'Remove a line item from a DRAFT order' })
+  @ApiOperation({ summary: 'Удалить позицию из черновика заказа (DRAFT)' })
   @ApiParam({ name: 'orderId', type: String })
   @ApiParam({ name: 'itemId', type: String })
   @ApiNoContentResponse()
@@ -132,7 +132,7 @@ export class OrdersController {
   @Post(':orderId/confirm')
   @HttpCode(HttpStatus.OK)
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER)
-  @ApiOperation({ summary: 'Confirm order: DRAFT → CONFIRMED' })
+  @ApiOperation({ summary: 'Подтвердить заказ: DRAFT → CONFIRMED' })
   @ApiParam({ name: 'orderId', type: String })
   @ApiOkResponse({ type: OrderResponseDto })
   confirm(
@@ -150,7 +150,7 @@ export class OrdersController {
   @Post(':orderId/start-picking')
   @HttpCode(HttpStatus.OK)
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.WORKER)
-  @ApiOperation({ summary: 'Start picking: CONFIRMED → IN_PICKING' })
+  @ApiOperation({ summary: 'Начать сборку: CONFIRMED → IN_PICKING' })
   @ApiParam({ name: 'orderId', type: String })
   @ApiOkResponse({ type: OrderResponseDto })
   startPicking(
@@ -168,7 +168,7 @@ export class OrdersController {
   @Post(':orderId/mark-picked')
   @HttpCode(HttpStatus.OK)
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.WORKER)
-  @ApiOperation({ summary: 'Mark as picked: IN_PICKING → PICKED' })
+  @ApiOperation({ summary: 'Завершить сборку: IN_PICKING → PICKED' })
   @ApiParam({ name: 'orderId', type: String })
   @ApiOkResponse({ type: OrderResponseDto })
   markPicked(
@@ -186,7 +186,7 @@ export class OrdersController {
   @Post(':orderId/start-packing')
   @HttpCode(HttpStatus.OK)
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.WORKER)
-  @ApiOperation({ summary: 'Start packing: PICKED → IN_PACKING' })
+  @ApiOperation({ summary: 'Начать упаковку: PICKED → IN_PACKING' })
   @ApiParam({ name: 'orderId', type: String })
   @ApiOkResponse({ type: OrderResponseDto })
   startPacking(
@@ -204,7 +204,7 @@ export class OrdersController {
   @Post(':orderId/mark-packed')
   @HttpCode(HttpStatus.OK)
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.WORKER)
-  @ApiOperation({ summary: 'Mark as packed: IN_PACKING → PACKED' })
+  @ApiOperation({ summary: 'Завершить упаковку: IN_PACKING → PACKED' })
   @ApiParam({ name: 'orderId', type: String })
   @ApiOkResponse({ type: OrderResponseDto })
   markPacked(
@@ -222,7 +222,7 @@ export class OrdersController {
   @Post(':orderId/ship')
   @HttpCode(HttpStatus.OK)
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER)
-  @ApiOperation({ summary: 'Ship order: PACKED → SHIPPED' })
+  @ApiOperation({ summary: 'Отгрузить заказ: PACKED → SHIPPED' })
   @ApiParam({ name: 'orderId', type: String })
   @ApiOkResponse({ type: OrderResponseDto })
   ship(
@@ -240,7 +240,7 @@ export class OrdersController {
   @Post(':orderId/deliver')
   @HttpCode(HttpStatus.OK)
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER)
-  @ApiOperation({ summary: 'Mark as delivered: SHIPPED → DELIVERED' })
+  @ApiOperation({ summary: 'Пометить как доставленный: SHIPPED → DELIVERED' })
   @ApiParam({ name: 'orderId', type: String })
   @ApiOkResponse({ type: OrderResponseDto })
   deliver(
@@ -259,8 +259,8 @@ export class OrdersController {
   @HttpCode(HttpStatus.OK)
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER)
   @ApiOperation({
-    summary: 'Cancel order',
-    description: 'Allowed from any non-terminal status (DRAFT through PACKED).',
+    summary: 'Отменить заказ',
+    description: 'Разрешено из любого нетерминального статуса (от DRAFT до PACKED).',
   })
   @ApiParam({ name: 'orderId', type: String })
   @ApiOkResponse({ type: OrderResponseDto })

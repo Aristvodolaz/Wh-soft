@@ -9,9 +9,10 @@ import { OrderItemRepository } from './infrastructure/repositories/order-item.re
 
 import { OrdersService } from './application/services/orders.service';
 import { OrdersController } from './interface/controllers/orders.controller';
+import { EventBusModule } from '../../infrastructure/event-bus/event-bus.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Order, OrderItem])],
+  imports: [TypeOrmModule.forFeature([Order, OrderItem]), EventBusModule],
   controllers: [OrdersController],
   providers: [OrdersService, OrderRepository, OrderItemRepository],
   exports: [OrdersService, OrderRepository, OrderItemRepository],
