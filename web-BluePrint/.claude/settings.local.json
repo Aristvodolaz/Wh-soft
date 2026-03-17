@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(for module:*)",
+      "Bash(do echo:*)",
+      "Read(//d/BluePrint/backend-BluePrint/src/**)",
+      "Bash(done)",
+      "Bash(find D:/BluePrint/backend-BluePrint/src/modules/warehouse -name *.ts)",
+      "Bash(xargs cat:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(del \"D:\\\\BluePrint\\\\web-BluePrint\\\\.claude\\\\worktrees\\\\unruffled-buck\\\\next.config.ts\")",
+      "Bash(xargs grep:*)",
+      "Bash(xargs head:*)",
+      "Bash(find D:/BluePrint/web-BluePrint/.claude/worktrees/unruffled-buck/backend-BluePrint -name bulk-create-cells*)",
+      "Bash(find D:/BluePrint/backend-BluePrint/src -name *.controller.ts)",
+      "Bash(node -e \":*)"
+    ]
+  }
+}
