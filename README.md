@@ -1,134 +1,90 @@
-# WMS Platform — Backend
+# 🏭 WMS Platform — BluePrint
+**Next-Generation SaaS Warehouse Management System**
 
-**Production-grade SaaS Warehouse Management System**
-
-> Node.js · NestJS · TypeScript · PostgreSQL · Redis · Docker · Kubernetes
-
----
-
-## Repository Structure
-
-```
-backend-BluePrint/
-├── landing-BluePrint/      # Next.js landing page (separate app)
-├── src/                    # NestJS backend source
-├── test/                   # E2E tests
-├── k8s/                    # Kubernetes manifests
-├── Dockerfile
-├── docker-compose.yml
-└── PROJECT_*.md            # Architecture documentation
-```
+[![NestJS](https://img.shields.io/badge/Backend-NestJS%2010-E0234E?logo=nestjs&logoColor=white)](https://nestjs.com/)
+[![Next.js](https://img.shields.io/badge/Web-Next.js%2014-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![Android](https://img.shields.io/badge/Mobile-Android%20Kotlin-3DDC84?logo=android&logoColor=white)](https://developer.android.com/)
+[![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Redis](https://img.shields.io/badge/Cache-Redis-DC382D?logo=redis&logoColor=white)](https://redis.io/)
+[![Docker](https://img.shields.io/badge/DevOps-Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 
 ---
 
-## Quick Start
+## 🚀 Обзор проекта / Project Overview
 
-### Prerequisites
-- Node.js 20+
-- Docker & Docker Compose
+**BluePrint WMS** — это высокопроизводительная SaaS-платформа для управления складской логистикой в реальном времени. Система разработана для обеспечения максимальной масштабируемости, надежности и удобства работы как менеджеров, так и складских рабочих.
 
-### Local Development (Docker)
+### Основные компоненты:
+*   **🌐 [Web-BluePrint](./web-BluePrint)** — Панель управления (Admin Dashboard) для глубокой аналитики и управления стоками.
+*   **🛬 [Landing-BluePrint](./landing-BluePrint)** — Современный маркетинговый сайт для привлечения клиентов.
+*   **⚙️ [Backend-BluePrint](./backend-BluePrint)** — Мощное API на NestJS с поддержкой мультитенантности и высокой нагрузки.
+*   **📱 [Android-BluePrint](./android-BluePrint)** — Мобильное приложение для ТСД (терминалов сбора данных) и смартфонов.
 
-```bash
-# 1. Setup environment
-cp .env.example .env
-# Edit .env with your values
+---
 
-# 2. Start all services
-docker-compose up
+## 🏗 Архитектура системы / System Architecture
 
-# API:    http://localhost:3030
-# Docs:   http://localhost:3030/docs
-# Health: http://localhost:3030/api/health
+Проект организован как монорепозиторий (Monorepo), объединяющий все уровни приложения:
+
+```text
+D:\BluePrint\
+├── ⚙️ backend-BluePrint/    # NestJS API, PostgreSQL, Redis, K8s
+├── 🌐 web-BluePrint/        # Next.js App (Admin Panel)
+├── 🛬 landing-BluePrint/    # Next.js Landing Page
+├── 📱 android-BluePrint/    # Kotlin / Jetpack Compose App
+└── 📜 README.md             # Этот файл
 ```
 
-### Local Development (Node.js)
+### Технологический стек:
+| Слой | Технологии |
+| :--- | :--- |
+| **Backend** | NestJS, TypeORM, PostgreSQL, Redis, JWT, Swagger |
+| **Frontend** | Next.js 14, Tailwind CSS, TypeScript |
+| **Mobile** | Kotlin, Jetpack Compose, Retrofit |
+| **Infrastructure** | Docker, Kubernetes, GitHub Actions |
 
+---
+
+## ⚙️ Быстрый запуск / Quick Start
+
+### 1. Подготовка окружения
+Убедитесь, что у вас установлены **Node.js 20+** и **Docker**.
+
+### 2. Запуск Backend
 ```bash
-# Install dependencies
+cd backend-BluePrint
+cp .env.example .env  # Настройте переменные окружения
+docker-compose up -d  # Запуск БД и Redis
 npm install
-
-# Start PostgreSQL and Redis (via Docker)
-docker-compose up postgres redis -d
-
-# Start API in watch mode
 npm run start:dev
 ```
+📖 **Swagger API Docs:** [http://localhost:3030/docs](http://localhost:3030/docs) (с описанием на русском языке!)
+
+### 3. Запуск Landing / Web
+```bash
+cd landing-BluePrint # или web-BluePrint
+npm install
+npm run dev
+```
 
 ---
 
-## Scripts
+## ✨ Ключевые возможности / Key Features
 
-| Command | Description |
-|---------|-------------|
-| `npm run start:dev` | Development with hot reload |
-| `npm run build` | Compile TypeScript |
-| `npm run lint` | ESLint check + auto-fix |
-| `npm run test` | Unit tests |
-| `npm run test:cov` | Coverage report |
-| `npm run test:e2e` | E2E tests |
-| `npm run migration:generate` | Generate new migration |
-| `npm run migration:run` | Run pending migrations |
-| `npm run migration:revert` | Revert last migration |
+-   **Multi-tenancy:** Полная изоляция данных организаций на уровне БД.
+-   **Real-time Analytics:** Дашборды с KPI по заказам, остаткам и эффективности сотрудников.
+-   **Advanced Inventory:** Поддержка зон, ячеек, партионного учета и серийных номеров.
+-   **Mobile Ready:** Оптимизированный интерфейс для сканеров штрихкодов.
+-   **Security:** Ролевая модель доступа (RBAC), защита от перегрузок (Rate Limiting).
 
 ---
 
-## API Endpoints
-
-| Endpoint | Description |
-|----------|-------------|
-| `GET /api/health` | Health check (public) |
-| `GET /docs` | Swagger UI (dev only) |
-| `POST /api/v1/auth/login` | Login with email+password |
-| `POST /api/v1/auth/refresh` | Refresh access token |
-| `POST /api/v1/auth/mobile-pin` | Worker PIN authentication |
-| `GET /api/v1/warehouses` | List warehouses |
-| `GET /api/v1/inventory` | Stock list |
-| `GET /api/v1/orders` | Order list |
-| `GET /api/v1/tasks/my` | Worker task queue |
-| `GET /api/v1/analytics/dashboard` | Dashboard KPIs |
+## 🛠 Последние исправления / Recent Updates
+-   ✅ Исправлена кольцевая зависимость (Circular Dependency) в модуле Redis.
+-   ✅ Добавлена полная локализация Swagger UI (описания методов на русском языке).
+-   ✅ Исправлена инициализация зависимостей EventBus в модулях склада и заказов.
 
 ---
 
-## Architecture
-
-| Document | Description |
-|----------|-------------|
-| [PROJECT_BACKEND_ARCHITECTURE.md](./PROJECT_BACKEND_ARCHITECTURE.md) | System architecture, modules, DB schema |
-| [PROJECT_ROADMAP.md](./PROJECT_ROADMAP.md) | Stage-by-stage development roadmap |
-| [PROJECT_TASKS.md](./PROJECT_TASKS.md) | Implementation task checklist |
-| [PROJECT_DECISIONS.md](./PROJECT_DECISIONS.md) | Architecture Decision Records (ADR) |
-
----
-
-## Environment Variables
-
-See [.env.example](./.env.example) for the complete list.
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `APP_PORT` | `3030` | Server port |
-| `APP_ENV` | `development` | Environment |
-| `DB_HOST` | — | PostgreSQL host |
-| `DB_USER` | — | PostgreSQL username |
-| `DB_PASSWORD` | — | PostgreSQL password |
-| `DB_NAME` | — | Database name |
-| `REDIS_HOST` | — | Redis host |
-| `JWT_SECRET` | — | JWT signing secret (min 32 chars) |
-| `JWT_REFRESH_SECRET` | — | Refresh token secret (min 32 chars) |
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Framework | NestJS 10 |
-| Language | TypeScript 5.4 (strict) |
-| Database | PostgreSQL 16 + TypeORM 0.3 |
-| Cache | Redis 7 + ioredis |
-| Auth | JWT + Passport |
-| API Docs | Swagger / OpenAPI 3 |
-| Container | Docker (multi-stage) |
-| Orchestration | Kubernetes |
-| Testing | Jest + Supertest |
+## 📄 Лицензия
+Proprietary. Все права защищены.
