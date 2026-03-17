@@ -2,7 +2,7 @@
 
 import { use, useState, useEffect, useRef } from 'react'
 import {
-  useWarehouse, useZones, useCreateZone, useBulkCreateCells,
+  useWarehouse, useZones, useCreateZone, useBulkCreateCells, useCells,
 } from '@/features/warehouses/api/use-warehouses'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
@@ -15,7 +15,9 @@ import { EmptyState } from '@/shared/ui/empty-state'
 import { ZoneType } from '@/entities/warehouse/types'
 import type { Zone } from '@/entities/warehouse/types'
 import Link from 'next/link'
-import { MapPin, Globe, Plus, Layers, QrCode, Printer } from 'lucide-react'
+import { MapPin, Globe, Plus, Layers, QrCode, Printer, Barcode } from 'lucide-react'
+import { BarcodeLabel } from '@/shared/ui/barcode-label'
+import type { Cell } from '@/entities/warehouse/types'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -94,6 +96,45 @@ function QrModal({ zone, onClose }: { zone: Zone; onClose: () => void }) {
   )
 }
 
+function ZonePrintButton({
+  warehouseId,
+  zone,
+  onPrint,
+}: {
+  warehouseId: string
+  zone: Zone
+  onPrint: (cells: Cell[]) => void
+}) {
+  const [enabled, setEnabled] = useState(false)
+  const { data: cells, isFetching } = useCells(warehouseId, zone.id)
+
+  const handleClick = () => {
+    if (cells && cells.length > 0) {
+      onPrint(cells)
+    } else {
+      setEnabled(true)
+    }
+  }
+
+  // Once cells load (after first click), open print modal
+  if (enabled && cells && cells.length > 0 && !isFetching) {
+    onPrint(cells)
+    setEnabled(false)
+  }
+
+  return (
+    <Button
+      size="xs"
+      variant="secondary"
+      onClick={handleClick}
+      loading={isFetching && enabled}
+    >
+      <Barcode className="h-3 w-3" />
+      ШК
+    </Button>
+  )
+}
+
 export default function WarehousePage({
   params,
 }: {
@@ -108,6 +149,7 @@ export default function WarehousePage({
   const [zoneOpen, setZoneOpen] = useState(false)
   const [cellsOpen, setCellsOpen] = useState<Zone | null>(null)
   const [qrZone, setQrZone] = useState<Zone | null>(null)
+  const [printCells, setPrintCells] = useState<Cell[] | null>(null)
 
   const zoneForm = useForm<CreateZoneForm>({
     resolver: zodResolver(createZoneSchema),
@@ -141,7 +183,13 @@ export default function WarehousePage({
     }
     bulkCreateCells.mutate(
       { warehouseId: id, zoneId: cellsOpen.id, cells },
-      { onSuccess: () => { setCellsOpen(null); cellsForm.reset() } },
+      {
+        onSuccess: (res) => {
+          setCellsOpen(null)
+          cellsForm.reset()
+          if (res?.cells?.length) setPrintCells(res.cells)
+        },
+      },
     )
   }
 
@@ -219,7 +267,7 @@ export default function WarehousePage({
                 {zone.description && (
                   <p className="text-sm text-neutral-500 mb-3">{zone.description}</p>
                 )}
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Button
                     size="xs"
                     variant="secondary"
@@ -236,6 +284,11 @@ export default function WarehousePage({
                     <QrCode className="h-3 w-3" />
                     QR
                   </Button>
+                  <ZonePrintButton
+                    warehouseId={id}
+                    zone={zone}
+                    onPrint={setPrintCells}
+                  />
                 </div>
               </Card>
             ))}
@@ -327,6 +380,74 @@ export default function WarehousePage({
           </div>
         </form>
       </Modal>
+
+      {/* EAN-13 Print Modal */}
+      {printCells && (
+        <Modal
+          open
+          onClose={() => setPrintCells(null)}
+          title={`Штрихкоды ячеек (EAN-13) — ${printCells.length} шт.`}
+          size="lg"
+        >
+          <div className="p-6 space-y-4">
+            <p className="text-sm text-neutral-500">
+              Штрихкоды сгенерированы для всех созданных ячеек. Нажмите «Печать» для вывода на принтер.
+            </p>
+
+            {/* Barcode grid — screen preview */}
+            <div
+              id="barcode-print-area"
+              className="grid gap-4 max-h-[55vh] overflow-y-auto border rounded-lg p-4 bg-white dark:bg-neutral-900"
+              style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}
+            >
+              {printCells.map((cell) => (
+                <div
+                  key={cell.id}
+                  className="flex flex-col items-center border border-neutral-200 dark:border-neutral-700 rounded p-2 bg-white"
+                >
+                  <BarcodeLabel
+                    code={cell.code}
+                    barcode={cell.barcode}
+                    label={cell.code}
+                    width={1.6}
+                    height={50}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <Button variant="secondary" onClick={() => setPrintCells(null)}>
+                Закрыть
+              </Button>
+              <Button
+                onClick={() => {
+                  const area = document.getElementById('barcode-print-area')
+                  if (!area) return
+                  const win = window.open('', '_blank')
+                  if (!win) return
+                  win.document.write(`
+                    <html><head><title>Штрихкоды ячеек EAN-13</title>
+                    <style>
+                      body{font-family:monospace;margin:0;padding:16px}
+                      .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+                      .cell{display:flex;flex-direction:column;align-items:center;border:1px solid #ccc;border-radius:4px;padding:8px;page-break-inside:avoid}
+                      svg{max-width:100%}
+                      @media print{body{margin:0}button{display:none}}
+                    </style></head>
+                    <body><div class="grid">${area.innerHTML}</div>
+                    <script>window.onload=()=>window.print()<\/script>
+                    </body></html>
+                  `)
+                  win.document.close()
+                }}
+              >
+                <Printer className="h-4 w-4 mr-1" /> Печать
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {/* QR Code Modal */}
       {qrZone && <QrModal zone={qrZone} onClose={() => setQrZone(null)} />}
