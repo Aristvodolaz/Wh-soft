@@ -108,3 +108,16 @@ export function useTaskTransition() {
 
   return { start, complete, fail, cancel }
 }
+
+export function useAutoAssign() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ warehouseId, type }: { warehouseId: string; type?: TaskType }) =>
+      tasksApi.autoAssign(warehouseId, type),
+    onSuccess: (task) => {
+      qc.invalidateQueries({ queryKey: taskKeys.all })
+      toast.success(`Задача назначена: ${task.title}`)
+    },
+    onError: () => toast.error('Нет доступных задач'),
+  })
+}

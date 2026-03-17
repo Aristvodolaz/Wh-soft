@@ -69,3 +69,11 @@ export function useMoveInventory() {
     onError: () => toast.error('Ошибка перемещения'),
   })
 }
+
+export function useScanBarcode(barcode: string, warehouseId: string) {
+  return useQuery({
+    queryKey: inventoryKeys.scan(barcode, warehouseId),
+    queryFn: () => inventoryApi.scan(barcode, warehouseId),
+    enabled: !!barcode && !!warehouseId,
+  })
+}

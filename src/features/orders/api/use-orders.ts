@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ordersApi } from './orders-api'
 import type {
   UpdateOrderDto,
+  AddOrderItemDto,
   OrderType,
   OrderStatus,
 } from '@/entities/order/types'
@@ -115,4 +116,29 @@ export function useOrderTransition() {
   })
 
   return { confirm, startPicking, markPicked, startPacking, markPacked, ship, deliver, cancel }
+}
+
+export function useAddOrderItem() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (dto: AddOrderItemDto & { orderId: string }) => ordersApi.addItem(dto),
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: orderKeys.detail(vars.orderId) })
+      toast.success('Позиция добавлена')
+    },
+    onError: () => toast.error('Ошибка добавления позиции'),
+  })
+}
+
+export function useRemoveOrderItem() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ orderId, itemId }: { orderId: string; itemId: string }) =>
+      ordersApi.removeItem({ orderId, itemId }),
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: orderKeys.detail(vars.orderId) })
+      toast.success('Позиция удалена')
+    },
+    onError: () => toast.error('Ошибка удаления позиции'),
+  })
 }

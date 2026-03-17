@@ -17,7 +17,7 @@ import {
   TASK_PRIORITY_LABELS,
 } from '@/entities/task/types'
 import { formatDateTime } from '@/shared/lib/format'
-import { Play, CheckCircle, XCircle } from 'lucide-react'
+import { Play, CheckCircle, XCircle, UserCheck } from 'lucide-react'
 
 const STATUS_BADGE: Record<TaskStatus, 'active' | 'pending' | 'in-progress' | 'completed' | 'cancelled' | 'failed' | 'draft'> = {
   [TaskStatus.PENDING]: 'pending',
@@ -41,9 +41,10 @@ interface TasksTableProps {
   onStart?: (task: Task) => void
   onComplete?: (task: Task) => void
   onCancel?: (task: Task) => void
+  onAssign?: (task: Task) => void
 }
 
-export function TasksTable({ tasks = [], loading, onStart, onComplete, onCancel }: TasksTableProps) {
+export function TasksTable({ tasks = [], loading, onStart, onComplete, onCancel, onAssign }: TasksTableProps) {
   const [search, setSearch] = useState('')
 
   const filtered = tasks.filter((t) => {
@@ -95,6 +96,11 @@ export function TasksTable({ tasks = [], loading, onStart, onComplete, onCancel 
       header: 'Действия',
       render: (row: Task) => (
         <div className="flex items-center gap-1">
+          {row.status === TaskStatus.PENDING && (
+            <Button variant="ghost" size="icon-sm" title="Назначить" onClick={() => onAssign?.(row)}>
+              <UserCheck className="h-4 w-4 text-primary-600" />
+            </Button>
+          )}
           {row.status === TaskStatus.ASSIGNED && (
             <Button variant="ghost" size="icon-sm" title="Начать" onClick={() => onStart?.(row)}>
               <Play className="h-4 w-4 text-primary-600" />

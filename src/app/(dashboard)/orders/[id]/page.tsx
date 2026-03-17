@@ -1,16 +1,23 @@
 'use client'
 
-import { use } from 'react'
-import { useOrder, useOrderTransition } from '@/features/orders/api/use-orders'
+import { use, useState } from 'react'
+import { useOrder, useOrderTransition, useAddOrderItem, useRemoveOrderItem } from '@/features/orders/api/use-orders'
+import { useProducts } from '@/features/inventory/api/use-inventory'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Card, CardHeader, CardContent } from '@/shared/ui/card'
+import { Modal } from '@/shared/ui/modal'
+import { Input } from '@/shared/ui/input'
+import { Select } from '@/shared/ui/select'
 import { FullPageSpinner } from '@/shared/ui/spinner'
 import { EmptyState } from '@/shared/ui/empty-state'
 import { ORDER_STATUS_LABELS, OrderStatus } from '@/entities/order/types'
 import { formatDateTime } from '@/shared/lib/format'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 
 const STATUS_BADGE: Record<OrderStatus, 'active' | 'pending' | 'in-progress' | 'completed' | 'cancelled' | 'draft'> = {
   [OrderStatus.DRAFT]: 'draft',
@@ -25,6 +32,13 @@ const STATUS_BADGE: Record<OrderStatus, 'active' | 'pending' | 'in-progress' | '
   [OrderStatus.RETURNED]: 'cancelled',
 }
 
+const addItemSchema = z.object({
+  productId: z.string().min(1, 'Выберите товар'),
+  requestedQuantity: z.coerce.number().min(1),
+  unitPrice: z.coerce.number().min(0).optional(),
+})
+type AddItemForm = z.infer<typeof addItemSchema>
+
 export default function OrderDetailPage({
   params,
 }: {
@@ -32,16 +46,31 @@ export default function OrderDetailPage({
 }) {
   const { id } = use(params)
   const { data: order, isLoading } = useOrder(id)
+  const { data: products } = useProducts()
   const transitions = useOrderTransition()
+  const addItem = useAddOrderItem()
+  const removeItem = useRemoveOrderItem()
+  const [addItemOpen, setAddItemOpen] = useState(false)
+
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<AddItemForm>({
+    resolver: zodResolver(addItemSchema),
+    defaultValues: { requestedQuantity: 1 },
+  })
+
+  const onAddItem = (data: AddItemForm) => {
+    addItem.mutate({ orderId: id, ...data }, {
+      onSuccess: () => { setAddItemOpen(false); reset() },
+    })
+  }
 
   if (isLoading) return <FullPageSpinner />
   if (!order) return <div className="p-6"><EmptyState title="Заказ не найден" /></div>
 
   const isPending = Object.values(transitions).some((m) => m.isPending)
+  const isDraft = order.status === OrderStatus.DRAFT
 
   return (
     <div className="p-6 space-y-6">
-      {/* Breadcrumb */}
       <Link href="/orders" className="flex items-center gap-1 text-sm text-neutral-500 hover:text-neutral-700">
         <ArrowLeft className="h-4 w-4" />
         Назад к заказам
@@ -59,7 +88,6 @@ export default function OrderDetailPage({
           </div>
           <p className="text-sm text-neutral-500 mt-1">Создан: {formatDateTime(order.createdAt)}</p>
         </div>
-        {/* State transitions */}
         <div className="flex gap-2">
           {order.status === OrderStatus.DRAFT && (
             <Button size="sm" onClick={() => transitions.confirm.mutate(order.id)} loading={isPending}>
@@ -105,7 +133,6 @@ export default function OrderDetailPage({
       </div>
 
       <div className="grid grid-cols-3 gap-6">
-        {/* Order info */}
         <Card>
           <CardHeader><h3 className="font-semibold">Информация</h3></CardHeader>
           <CardContent className="space-y-3">
@@ -138,10 +165,15 @@ export default function OrderDetailPage({
           </CardContent>
         </Card>
 
-        {/* Items */}
         <Card className="col-span-2">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <h3 className="font-semibold">Позиции заказа ({order.items?.length ?? 0})</h3>
+            {isDraft && (
+              <Button size="sm" variant="secondary" onClick={() => setAddItemOpen(true)}>
+                <Plus className="h-3.5 w-3.5" />
+                Добавить
+              </Button>
+            )}
           </CardHeader>
           <CardContent className="p-0">
             {!order.items?.length ? (
@@ -153,6 +185,7 @@ export default function OrderDetailPage({
                     <th className="px-4 py-2 text-left text-xs text-neutral-500 font-semibold">Товар</th>
                     <th className="px-4 py-2 text-right text-xs text-neutral-500 font-semibold">Кол-во</th>
                     <th className="px-4 py-2 text-right text-xs text-neutral-500 font-semibold">Собрано</th>
+                    {isDraft && <th className="w-10" />}
                   </tr>
                 </thead>
                 <tbody>
@@ -164,6 +197,18 @@ export default function OrderDetailPage({
                       </td>
                       <td className="px-4 py-2 text-right font-medium">{item.requestedQuantity}</td>
                       <td className="px-4 py-2 text-right text-neutral-500">{item.pickedQuantity ?? '—'}</td>
+                      {isDraft && (
+                        <td className="px-2 py-2">
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => removeItem.mutate({ orderId: id, itemId: item.id })}
+                            loading={removeItem.isPending}
+                          >
+                            <Trash2 className="h-3.5 w-3.5 text-danger-500" />
+                          </Button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -172,6 +217,41 @@ export default function OrderDetailPage({
           </CardContent>
         </Card>
       </div>
+
+      <Modal open={addItemOpen} onClose={() => setAddItemOpen(false)} title="Добавить позицию">
+        <form onSubmit={handleSubmit(onAddItem)} className="p-6 space-y-4">
+          <Select label="Товар" required error={errors.productId?.message} {...register('productId')}>
+            <option value="">Выберите товар</option>
+            {products?.map((p) => (
+              <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
+            ))}
+          </Select>
+          <Input
+            label="Количество"
+            type="number"
+            min="1"
+            error={errors.requestedQuantity?.message}
+            required
+            {...register('requestedQuantity')}
+          />
+          <Input
+            label="Цена за единицу"
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="0.00"
+            {...register('unitPrice')}
+          />
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="secondary" type="button" onClick={() => setAddItemOpen(false)}>
+              Отмена
+            </Button>
+            <Button type="submit" loading={addItem.isPending}>
+              Добавить
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   )
 }
