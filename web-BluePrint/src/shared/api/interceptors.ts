@@ -23,6 +23,15 @@ apiClient.interceptors.request.use((config) => {
   return config
 })
 
+// Unwrap backend envelope { success, data, timestamp } so API layers get data directly
+apiClient.interceptors.response.use((response) => {
+  const body = response.data as { success?: boolean; data?: unknown; timestamp?: string }
+  if (body && typeof body.success === 'boolean' && 'data' in body) {
+    response.data = body.data
+  }
+  return response
+})
+
 // Response interceptor — handle 401, refresh, retry
 apiClient.interceptors.response.use(
   (response) => response,
@@ -49,11 +58,11 @@ apiClient.interceptors.response.use(
           throw new Error('No refresh token')
         }
 
-        const response = await apiClient.post<{ success: boolean; data: TokenResponse; timestamp: string }>('/auth/refresh', {
+        const response = await apiClient.post<TokenResponse>('/auth/refresh', {
           refreshToken,
         })
 
-        const tokens = response.data.data
+        const tokens = response.data
         storage.setAccessToken(tokens.accessToken)
         storage.setRefreshToken(tokens.refreshToken)
 

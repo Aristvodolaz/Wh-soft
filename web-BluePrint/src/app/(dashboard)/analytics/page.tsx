@@ -26,13 +26,14 @@ const TASK_COLORS = ['#3B82F6', '#22C55E', '#F59E0B', '#EF4444', '#94A3B8', '#06
 
 export default function AnalyticsPage() {
   const { data: warehouses } = useWarehouses()
+  const warehouseList = Array.isArray(warehouses) ? warehouses : []
   const { selectedWarehouseId, setWarehouse } = useAuthStore()
 
   useEffect(() => {
-    if (!selectedWarehouseId && warehouses?.length) {
-      setWarehouse(warehouses[0].id)
+    if (!selectedWarehouseId && warehouseList.length) {
+      setWarehouse(warehouseList[0].id)
     }
-  }, [warehouses, selectedWarehouseId, setWarehouse])
+  }, [warehouseList, selectedWarehouseId, setWarehouse])
 
   const warehouseId = selectedWarehouseId ?? ''
   const { data: orders, isLoading: ordersLoading } = useOrdersAnalytics(warehouseId)
@@ -68,13 +69,13 @@ export default function AnalyticsPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-neutral-900">Аналитика</h1>
-        {warehouses && warehouses.length > 0 && (
+        {warehouseList.length > 0 && (
           <Select
             value={selectedWarehouseId ?? ''}
             onChange={(e) => setWarehouse(e.target.value)}
             className="w-52"
           >
-            {warehouses.map((w) => (
+            {warehouseList.map((w) => (
               <option key={w.id} value={w.id}>{w.name}</option>
             ))}
           </Select>

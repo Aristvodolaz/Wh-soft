@@ -29,6 +29,7 @@ type CreateForm = z.infer<typeof createSchema>
 
 export default function OrdersPage() {
   const { data: warehouses } = useWarehouses()
+  const warehouseList = Array.isArray(warehouses) ? warehouses : []
   const { selectedWarehouseId, setWarehouse } = useAuthStore()
   const { data: orders, isLoading } = useOrders({ warehouseId: selectedWarehouseId ?? undefined })
   const createOrder = useCreateOrder()
@@ -67,13 +68,13 @@ export default function OrdersPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {warehouses && warehouses.length > 0 && (
+          {warehouseList.length > 0 && (
             <Select
               value={selectedWarehouseId ?? ''}
               onChange={(e) => setWarehouse(e.target.value)}
               className="w-48"
             >
-              {warehouses.map((w) => (
+              {warehouseList.map((w) => (
                 <option key={w.id} value={w.id}>{w.name}</option>
               ))}
             </Select>
@@ -91,7 +92,7 @@ export default function OrdersPage() {
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
           <Select label="Склад" required {...register('warehouseId')}>
             <option value="">Выберите склад</option>
-            {warehouses?.map((w) => (
+            {warehouseList.map((w) => (
               <option key={w.id} value={w.id}>{w.name}</option>
             ))}
           </Select>

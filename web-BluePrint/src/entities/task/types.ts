@@ -1,12 +1,13 @@
+/** Must match backend TaskType (task.entity.ts) */
 export enum TaskType {
-  RECEIVING = 'RECEIVING',
-  PUTAWAY = 'PUTAWAY',
-  PICKING = 'PICKING',
-  PACKING = 'PACKING',
-  SHIPPING = 'SHIPPING',
+  PICK = 'PICK',
+  PACK = 'PACK',
+  RECEIVE = 'RECEIVE',
+  PUT_AWAY = 'PUT_AWAY',
   TRANSFER = 'TRANSFER',
-  INVENTORY_COUNT = 'INVENTORY_COUNT',
-  REPLENISHMENT = 'REPLENISHMENT',
+  COUNT = 'COUNT',
+  INSPECT = 'INSPECT',
+  REPLENISH = 'REPLENISH',
 }
 
 export enum TaskStatus {
@@ -95,12 +96,12 @@ export const TASK_PRIORITY_LABELS: Record<TaskPriority, string> = {
 }
 
 export const TASK_TYPE_LABELS: Record<TaskType, string> = {
-  [TaskType.RECEIVING]: 'Приёмка',
-  [TaskType.PUTAWAY]: 'Размещение',
-  [TaskType.PICKING]: 'Сборка',
-  [TaskType.PACKING]: 'Упаковка',
-  [TaskType.SHIPPING]: 'Отгрузка',
+  [TaskType.PICK]: 'Сборка',
+  [TaskType.PACK]: 'Упаковка',
+  [TaskType.RECEIVE]: 'Приёмка',
+  [TaskType.PUT_AWAY]: 'Размещение',
   [TaskType.TRANSFER]: 'Перемещение',
-  [TaskType.INVENTORY_COUNT]: 'Инвентаризация',
-  [TaskType.REPLENISHMENT]: 'Пополнение',
+  [TaskType.COUNT]: 'Инвентаризация',
+  [TaskType.INSPECT]: 'Инспекция',
+  [TaskType.REPLENISH]: 'Пополнение',
 }

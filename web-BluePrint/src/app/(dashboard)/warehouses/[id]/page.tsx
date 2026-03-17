@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   useWarehouse, useZones, useCreateZone, useBulkCreateCells,
 } from '@/features/warehouses/api/use-warehouses'
@@ -96,9 +96,9 @@ function QrModal({ zone, onClose }: { zone: Zone; onClose: () => void }) {
 export default function WarehousePage({
   params,
 }: {
-  params: Promise<{ id: string }>
+  params: { id: string }
 }) {
-  const { id } = use(params)
+  const { id } = params
   const { data: warehouse, isLoading: wLoading } = useWarehouse(id)
   const { data: zones, isLoading: zLoading } = useZones(id)
   const createZone = useCreateZone()

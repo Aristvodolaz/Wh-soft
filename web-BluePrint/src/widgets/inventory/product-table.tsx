@@ -34,8 +34,9 @@ const PAGE_SIZE = 25
 export function ProductTable({ products = [], loading, onEdit, onSelect }: ProductTableProps) {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const list = Array.isArray(products) ? products : []
 
-  const filtered = products.filter((p) => {
+  const filtered = list.filter((p) => {
     const q = search.toLowerCase()
     return (
       p.name.toLowerCase().includes(q) ||

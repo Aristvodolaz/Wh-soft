@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState } from 'react'
+import { useState } from 'react'
 import { useOrder, useOrderTransition, useAddOrderItem, useRemoveOrderItem } from '@/features/orders/api/use-orders'
 import { useProducts } from '@/features/inventory/api/use-inventory'
 import { Badge } from '@/shared/ui/badge'
@@ -42,9 +42,9 @@ type AddItemForm = z.infer<typeof addItemSchema>
 export default function OrderDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>
+  params: { id: string }
 }) {
-  const { id } = use(params)
+  const { id } = params
   const { data: order, isLoading } = useOrder(id)
   const { data: products } = useProducts()
   const transitions = useOrderTransition()

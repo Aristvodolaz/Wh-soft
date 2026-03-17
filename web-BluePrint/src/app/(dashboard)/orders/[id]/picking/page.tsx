@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState } from 'react'
+import { useState } from 'react'
 import { useOrder, useOrderTransition } from '@/features/orders/api/use-orders'
 import { FullPageSpinner } from '@/shared/ui/spinner'
 import { EmptyState } from '@/shared/ui/empty-state'
@@ -17,9 +17,9 @@ import { cn } from '@/shared/lib/cn'
 export default function PickingPage({
   params,
 }: {
-  params: Promise<{ id: string }>
+  params: { id: string }
 }) {
-  const { id } = use(params)
+  const { id } = params
   const { data: order, isLoading } = useOrder(id)
   const transitions = useOrderTransition()
   const [picked, setPicked] = useState<Set<string>>(new Set())

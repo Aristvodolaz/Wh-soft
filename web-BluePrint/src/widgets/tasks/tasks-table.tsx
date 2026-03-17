@@ -46,8 +46,9 @@ interface TasksTableProps {
 
 export function TasksTable({ tasks = [], loading, onStart, onComplete, onCancel, onAssign }: TasksTableProps) {
   const [search, setSearch] = useState('')
+  const list = Array.isArray(tasks) ? tasks : []
 
-  const filtered = tasks.filter((t) => {
+  const filtered = list.filter((t) => {
     const q = search.toLowerCase()
     return t.title.toLowerCase().includes(q) || t.id.toLowerCase().includes(q)
   })

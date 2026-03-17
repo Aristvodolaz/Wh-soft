@@ -35,6 +35,7 @@ type AssignForm = z.infer<typeof assignSchema>
 
 export default function TasksPage() {
   const { data: warehouses } = useWarehouses()
+  const warehouseList = Array.isArray(warehouses) ? warehouses : []
   const { selectedWarehouseId, setWarehouse } = useAuthStore()
   const { data: tasks, isLoading } = useTasks({ warehouseId: selectedWarehouseId ?? undefined })
   const transitions = useTaskTransition()
@@ -49,7 +50,7 @@ export default function TasksPage() {
     defaultValues: {
       warehouseId: selectedWarehouseId ?? '',
       priority: TaskPriority.NORMAL,
-      type: TaskType.PICKING,
+      type: TaskType.PICK,
     },
   })
 
@@ -77,13 +78,13 @@ export default function TasksPage() {
           <p className="text-sm text-neutral-500 mt-0.5">{tasks?.length ?? 0} задач</p>
         </div>
         <div className="flex items-center gap-3">
-          {warehouses && warehouses.length > 0 && (
+          {warehouseList.length > 0 && (
             <Select
               value={selectedWarehouseId ?? ''}
               onChange={(e) => setWarehouse(e.target.value)}
               className="w-48"
             >
-              {warehouses.map((w) => (
+              {warehouseList.map((w) => (
                 <option key={w.id} value={w.id}>{w.name}</option>
               ))}
             </Select>
@@ -120,7 +121,7 @@ export default function TasksPage() {
         <form onSubmit={createForm.handleSubmit(onSubmit)} className="p-6 space-y-4">
           <Select label="Склад" required {...createForm.register('warehouseId')}>
             <option value="">Выберите склад</option>
-            {warehouses?.map((w) => (
+            {warehouseList.map((w) => (
               <option key={w.id} value={w.id}>{w.name}</option>
             ))}
           </Select>

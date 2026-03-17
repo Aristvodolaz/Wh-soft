@@ -38,8 +38,9 @@ const PAGE_SIZE = 25
 export function OrdersTable({ orders = [], loading }: OrdersTableProps) {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const list = Array.isArray(orders) ? orders : []
 
-  const filtered = orders.filter((o) => {
+  const filtered = list.filter((o) => {
     const q = search.toLowerCase()
     return (
       o.orderNumber?.toLowerCase().includes(q) ||

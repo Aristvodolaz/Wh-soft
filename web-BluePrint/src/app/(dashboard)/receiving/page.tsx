@@ -53,7 +53,9 @@ export default function ReceivingPage() {
   const [warehouseId, setWarehouseId] = useState('')
 
   const { data: warehouses } = useWarehouses()
+  const warehouseList = Array.isArray(warehouses) ? warehouses : []
   const { data: products } = useProducts()
+  const productList = Array.isArray(products) ? products : []
   const createOrder = useCreateOrder()
   const addItem = useAddOrderItem()
   const transitions = useOrderTransition()
@@ -110,7 +112,7 @@ export default function ReceivingPage() {
   }
 
   const onScanBarcode = (barcode: string) => {
-    const product = products?.find(
+    const product = productList.find(
       (p) => p.barcode === barcode || p.sku === barcode
     )
     if (!product) {
@@ -167,7 +169,7 @@ export default function ReceivingPage() {
               {...step1Form.register('warehouseId')}
             >
               <option value="">— Выберите склад —</option>
-              {warehouses?.map((w) => (
+              {warehouseList.map((w) => (
                 <option key={w.id} value={w.id}>{w.name}</option>
               ))}
             </Select>
@@ -246,7 +248,7 @@ export default function ReceivingPage() {
               <div className="flex-1">
                 <Select {...addItemForm.register('productId')}>
                   <option value="">— Выберите товар —</option>
-                  {products?.map((p) => (
+                  {productList.map((p) => (
                     <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
                   ))}
                 </Select>
