@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState } from 'react'
+import { use, useState, useEffect, useRef } from 'react'
 import {
   useWarehouse, useZones, useCreateZone, useBulkCreateCells,
 } from '@/features/warehouses/api/use-warehouses'
@@ -15,10 +15,11 @@ import { EmptyState } from '@/shared/ui/empty-state'
 import { ZoneType } from '@/entities/warehouse/types'
 import type { Zone } from '@/entities/warehouse/types'
 import Link from 'next/link'
-import { MapPin, Globe, Plus, Layers } from 'lucide-react'
+import { MapPin, Globe, Plus, Layers, QrCode, Printer } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import QRCode from 'qrcode'
 
 const ZONE_TYPE_LABELS: Record<ZoneType, string> = {
   [ZoneType.STORAGE]: 'Хранение',
@@ -42,9 +43,55 @@ const bulkCellsSchema = z.object({
   rows: z.coerce.number().min(1).max(100),
   racks: z.coerce.number().min(1).max(100),
   shelves: z.coerce.number().min(1).max(50),
-  
 })
 type BulkCellsForm = z.infer<typeof bulkCellsSchema>
+
+function QrModal({ zone, onClose }: { zone: Zone; onClose: () => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const payload = JSON.stringify({ type: 'zone', id: zone.id, code: zone.code })
+
+  useEffect(() => {
+    if (canvasRef.current) {
+      QRCode.toCanvas(canvasRef.current, payload, { width: 200, margin: 2 }, (err) => {
+        if (err) console.error(err)
+      })
+    }
+  }, [payload])
+
+  const handlePrint = () => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const dataUrl = canvas.toDataURL()
+    const win = window.open('', '_blank')
+    if (!win) return
+    win.document.write(`
+      <html><head><title>QR — ${zone.code}</title>
+      <style>body{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:monospace}
+      img{width:200px;height:200px}h2{margin:8px 0 4px}p{color:#666;font-size:12px;margin:0}</style></head>
+      <body><img src="${dataUrl}"/><h2>${zone.name}</h2><p>${zone.code}</p></body></html>
+    `)
+    win.document.close()
+    win.print()
+  }
+
+  return (
+    <Modal open onClose={onClose} title={`QR-код — ${zone.name}`}>
+      <div className="p-6 flex flex-col items-center gap-4">
+        <canvas ref={canvasRef} className="border rounded-lg" />
+        <div className="text-center">
+          <p className="font-semibold text-neutral-900">{zone.name}</p>
+          <p className="font-mono-sku text-sm text-neutral-400">{zone.code}</p>
+        </div>
+        <div className="flex gap-3">
+          <Button variant="secondary" onClick={onClose}>Закрыть</Button>
+          <Button onClick={handlePrint}>
+            <Printer className="h-4 w-4 mr-1" /> Печать
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
 
 export default function WarehousePage({
   params,
@@ -59,6 +106,7 @@ export default function WarehousePage({
 
   const [zoneOpen, setZoneOpen] = useState(false)
   const [cellsOpen, setCellsOpen] = useState<Zone | null>(null)
+  const [qrZone, setQrZone] = useState<Zone | null>(null)
 
   const zoneForm = useForm<CreateZoneForm>({
     resolver: zodResolver(createZoneSchema),
@@ -78,7 +126,6 @@ export default function WarehousePage({
 
   const onBulkCells = (data: BulkCellsForm) => {
     if (!cellsOpen) return
-    // Generate cells array from template
     const cells: { code: string }[] = []
     for (let row = 1; row <= data.rows; row++) {
       for (let rack = 1; rack <= data.racks; rack++) {
@@ -171,14 +218,24 @@ export default function WarehousePage({
                 {zone.description && (
                   <p className="text-sm text-neutral-500 mb-3">{zone.description}</p>
                 )}
-                <Button
-                  size="xs"
-                  variant="secondary"
-                  onClick={() => { setCellsOpen(zone); cellsForm.reset() }}
-                >
-                  <Layers className="h-3 w-3" />
-                  Создать ячейки
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    size="xs"
+                    variant="secondary"
+                    onClick={() => { setCellsOpen(zone); cellsForm.reset() }}
+                  >
+                    <Layers className="h-3 w-3" />
+                    Ячейки
+                  </Button>
+                  <Button
+                    size="xs"
+                    variant="secondary"
+                    onClick={() => setQrZone(zone)}
+                  >
+                    <QrCode className="h-3 w-3" />
+                    QR
+                  </Button>
+                </div>
               </Card>
             ))}
           </div>
@@ -266,6 +323,9 @@ export default function WarehousePage({
           </div>
         </form>
       </Modal>
+
+      {/* QR Code Modal */}
+      {qrZone && <QrModal zone={qrZone} onClose={() => setQrZone(null)} />}
     </div>
   )
 }

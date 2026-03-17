@@ -12,7 +12,9 @@
       "Bash(del \"D:\\\\BluePrint\\\\web-BluePrint\\\\.claude\\\\worktrees\\\\unruffled-buck\\\\next.config.ts\")",
       "Bash(xargs grep:*)",
       "Bash(xargs head:*)",
-      "Bash(find D:/BluePrint/web-BluePrint/.claude/worktrees/unruffled-buck/backend-BluePrint -name bulk-create-cells*)"
+      "Bash(find D:/BluePrint/web-BluePrint/.claude/worktrees/unruffled-buck/backend-BluePrint -name bulk-create-cells*)",
+      "Bash(find D:/BluePrint/backend-BluePrint/src -name *.controller.ts)",
+      "Bash(node -e \":*)"
     ]
   }
 }

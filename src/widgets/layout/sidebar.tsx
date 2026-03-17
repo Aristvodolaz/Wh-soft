@@ -16,6 +16,7 @@ import {
   HelpCircle,
   ChevronLeft,
   ChevronRight,
+  Truck,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -29,6 +30,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Дашборд', icon: <LayoutDashboard className="h-5 w-5" /> },
   { href: '/warehouses', label: 'Склад', icon: <Warehouse className="h-5 w-5" /> },
+  { href: '/receiving', label: 'Приёмка', icon: <Truck className="h-5 w-5" /> },
   { href: '/inventory/products', label: 'Товары', icon: <Package className="h-5 w-5" /> },
   { href: '/orders', label: 'Заказы', icon: <ShoppingCart className="h-5 w-5" /> },
   { href: '/tasks', label: 'Задачи', icon: <ClipboardList className="h-5 w-5" /> },
