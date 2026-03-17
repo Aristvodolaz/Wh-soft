@@ -14,7 +14,12 @@
       "Bash(xargs head:*)",
       "Bash(find D:/BluePrint/web-BluePrint/.claude/worktrees/unruffled-buck/backend-BluePrint -name bulk-create-cells*)",
       "Bash(find D:/BluePrint/backend-BluePrint/src -name *.controller.ts)",
-      "Bash(node -e \":*)"
+      "Bash(node -e \":*)",
+      "Bash(node -e \"const fs=require\\(''fs''\\); console.log\\(fs.readFileSync\\(''src/app/\\(dashboard\\)/employees/page.tsx'',''utf8''\\).substring\\(0,50\\)\\)\")",
+      "Bash(node -e \"require\\(''fs''\\).writeFileSync\\(''tmp_analytics.txt'', ''test''\\)\")",
+      "Bash(python3 -c \":*)",
+      "Bash(where python:*)",
+      "Bash(where node:*)"
     ]
   }
 }

@@ -20,7 +20,7 @@ export function Card({ className, children, accent = 'none' }: CardProps) {
   return (
     <div
       className={cn(
-        'bg-white rounded-lg border border-neutral-200 shadow-sm',
+        'bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm',
         accentClasses[accent],
         className
       )}
@@ -32,7 +32,7 @@ export function Card({ className, children, accent = 'none' }: CardProps) {
 
 export function CardHeader({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
-    <div className={cn('px-6 py-4 border-b border-neutral-100', className)}>
+    <div className={cn('px-6 py-4 border-b border-neutral-100 dark:border-neutral-700', className)}>
       {children}
     </div>
   )
@@ -44,7 +44,7 @@ export function CardContent({ className, children }: { className?: string; child
 
 export function CardFooter({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
-    <div className={cn('px-6 py-4 border-t border-neutral-100', className)}>
+    <div className={cn('px-6 py-4 border-t border-neutral-100 dark:border-neutral-700', className)}>
       {children}
     </div>
   )

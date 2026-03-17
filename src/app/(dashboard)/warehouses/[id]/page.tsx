@@ -20,6 +20,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import QRCode from 'qrcode'
+import { ZoneHeatmap } from '@/widgets/warehouse/zone-heatmap'
 
 const ZONE_TYPE_LABELS: Record<ZoneType, string> = {
   [ZoneType.STORAGE]: 'Хранение',
@@ -241,6 +242,9 @@ export default function WarehousePage({
           </div>
         )}
       </div>
+
+      {/* Zone Heatmap */}
+      {zones && zones.length > 0 && <ZoneHeatmap zones={zones} />}
 
       {/* Create Zone Modal */}
       <Modal open={zoneOpen} onClose={() => setZoneOpen(false)} title="Новая зона">

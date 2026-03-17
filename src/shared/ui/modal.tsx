@@ -46,7 +46,7 @@ export function Modal({ open, onClose, title, children, className, size = 'md' }
       {/* Dialog */}
       <div
         className={cn(
-          'relative w-full bg-white rounded-xl shadow-xl',
+          'relative w-full bg-white dark:bg-neutral-800 rounded-xl shadow-xl',
           'animate-in fade-in-0 zoom-in-95 duration-200',
           sizeClasses[size],
           className
@@ -54,7 +54,7 @@ export function Modal({ open, onClose, title, children, className, size = 'md' }
       >
         {title && (
           <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100">
-            <h2 className="text-lg font-semibold text-neutral-900">{title}</h2>
+            <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{title}</h2>
             <button
               onClick={onClose}
               className="text-neutral-400 hover:text-neutral-600 transition-colors"
