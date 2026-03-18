@@ -13,6 +13,8 @@ interface BarcodeLabelProps {
   width?: number
   height?: number
   className?: string
+  /** Extra attributes spread onto the <svg> element (e.g. data-* for print queries) */
+  svgProps?: Record<string, string>
 }
 
 /**
@@ -43,6 +45,7 @@ export function BarcodeLabel({
   width = 2,
   height = 60,
   className = '',
+  svgProps,
 }: BarcodeLabelProps) {
   const svgRef = useRef<SVGSVGElement>(null)
   const ean12 = toEan12(barcode ?? code)
@@ -75,7 +78,7 @@ export function BarcodeLabel({
 
   return (
     <div className={['flex flex-col items-center gap-1', className].join(' ')}>
-      <svg ref={svgRef} />
+      <svg ref={svgRef} {...svgProps} />
       {label && (
         <p className="text-xs font-mono text-neutral-600 text-center leading-tight">{label}</p>
       )}

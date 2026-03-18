@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback, useMemo } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useEmployeeStore, type EmployeeProfile } from '@/features/employees/store/employee-store'
 import { useEmployeeKpi } from '@/features/analytics/api/use-analytics'
-import { useTasks } from '@/features/tasks/api/use-tasks'
+import { useTasks, useAssignTask } from '@/features/tasks/api/use-tasks'
 import { Card, CardHeader, CardContent } from '@/shared/ui/card'
 import { KpiCard } from '@/shared/ui/kpi-card'
 import { Input } from '@/shared/ui/input'
@@ -20,9 +21,12 @@ import {
 import {
   Users, Search, CheckCircle, XCircle, Clock, Target,
   Plus, Pencil, Trash2, BarChart2, ListTodo, UserCircle,
+  Filter, X, Zap, ClipboardList,
 } from 'lucide-react'
 import { formatDate } from '@/shared/lib/format'
 import { Role } from '@/entities/auth/types'
+import { TaskStatus } from '@/entities/task/types'
+import type { Task } from '@/entities/task/types'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -359,6 +363,87 @@ function EmployeeTasksPanel({ employeeId }: { employeeId: string }) {
   )
 }
 
+// ─── Quick Assign Modal ───────────────────────────────────────────────────────
+
+function QuickAssignModal({
+  employee,
+  onClose,
+}: {
+  employee: EmployeeProfile
+  onClose: () => void
+}) {
+  const { data: tasks, isLoading } = useTasks()
+  const assignTask = useAssignTask()
+
+  const pending = (tasks ?? []).filter(
+    (t) => t.status === TaskStatus.PENDING && !t.assignedTo,
+  )
+
+  const handleAssign = async (task: Task) => {
+    await assignTask.mutateAsync({ taskId: task.id, userId: employee.id })
+    onClose()
+  }
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={`Назначить задачу — ${employee.firstName} ${employee.lastName}`}
+      size="lg"
+    >
+      <div className="p-6 space-y-4">
+        {isLoading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full rounded" />
+            ))}
+          </div>
+        ) : !pending.length ? (
+          <EmptyState
+            icon={<ClipboardList className="h-10 w-10" />}
+            title="Нет доступных задач"
+            description="Все задачи уже назначены или выполнены"
+          />
+        ) : (
+          <Table
+            columns={[
+              { key: 'title', header: 'Задача' },
+              {
+                key: 'type',
+                header: 'Тип',
+                render: (t) => <span className="font-mono text-xs">{t.type}</span>,
+              },
+              {
+                key: 'priority',
+                header: 'Приоритет',
+                render: (t) => <span className="text-sm">{t.priority}</span>,
+              },
+              {
+                key: 'actions',
+                header: '',
+                render: (t) => (
+                  <Button
+                    size="xs"
+                    onClick={() => handleAssign(t)}
+                    disabled={assignTask.isPending}
+                  >
+                    <Zap className="h-3 w-3" /> Назначить
+                  </Button>
+                ),
+              },
+            ]}
+            data={pending}
+            keyExtractor={(t) => t.id}
+          />
+        )}
+        <div className="flex justify-end">
+          <Button variant="secondary" onClick={onClose}>Закрыть</Button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
 // ─── Employee Detail Drawer ───────────────────────────────────────────────────
 
 type DetailTab = 'kpi' | 'tasks' | 'profile'
@@ -366,10 +451,12 @@ type DetailTab = 'kpi' | 'tasks' | 'profile'
 function EmployeeDetail({
   employee,
   onEdit,
+  onAssign,
   onClose,
 }: {
   employee: EmployeeProfile
   onEdit: () => void
+  onAssign: () => void
   onClose: () => void
 }) {
   const [tab, setTab] = useState<DetailTab>('kpi')
@@ -406,9 +493,14 @@ function EmployeeDetail({
               </div>
             </div>
           </div>
-          <Button size="sm" variant="secondary" onClick={onEdit}>
-            <Pencil className="h-3 w-3" /> Редактировать
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="ghost" onClick={onAssign}>
+              <Zap className="h-3 w-3" /> Задачу
+            </Button>
+            <Button size="sm" variant="secondary" onClick={onEdit}>
+              <Pencil className="h-3 w-3" /> Редактировать
+            </Button>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -467,14 +559,42 @@ function EmployeeDetail({
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function EmployeesPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const { employees, addEmployee, updateEmployee, removeEmployee } = useEmployeeStore()
+  const { data: tasks } = useTasks()
 
   const [search, setSearch] = useState('')
-  const [roleFilter, setRoleFilter] = useState<Role | ''>('')
   const [showAdd, setShowAdd] = useState(false)
   const [editEmployee, setEditEmployee] = useState<EmployeeProfile | null>(null)
   const [detailEmployee, setDetailEmployee] = useState<EmployeeProfile | null>(null)
+  const [assignEmployee, setAssignEmployee] = useState<EmployeeProfile | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<EmployeeProfile | null>(null)
+
+  // URL-driven filters
+  const roleFilter = searchParams.get('role') as Role | null
+  const statusFilter = searchParams.get('status') as 'active' | 'inactive' | null
+
+  const setParam = useCallback((key: string, value: string | null) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (value) params.set(key, value)
+    else params.delete(key)
+    router.replace(`/employees?${params.toString()}`, { scroll: false })
+  }, [router, searchParams])
+
+  const clearFilters = () => router.replace('/employees', { scroll: false })
+  const hasFilters = roleFilter || statusFilter
+
+  // Workload: active task count per employee
+  const workloadMap = useMemo(() => {
+    const map: Record<string, number> = {}
+    for (const t of tasks ?? []) {
+      if (t.assignedTo && (t.status === TaskStatus.ASSIGNED || t.status === TaskStatus.IN_PROGRESS)) {
+        map[t.assignedTo] = (map[t.assignedTo] ?? 0) + 1
+      }
+    }
+    return map
+  }, [tasks])
 
   const filtered = employees.filter((e) => {
     const q = search.toLowerCase()
@@ -485,7 +605,10 @@ export default function EmployeesPage() {
       e.email.toLowerCase().includes(q) ||
       e.id.toLowerCase().includes(q)
     const matchRole = !roleFilter || e.role === roleFilter
-    return matchQ && matchRole
+    const matchStatus =
+      !statusFilter ||
+      (statusFilter === 'active' ? e.isActive : !e.isActive)
+    return matchQ && matchRole && matchStatus
   })
 
   const handleAdd = (data: EmployeeForm) => {
@@ -521,7 +644,7 @@ export default function EmployeesPage() {
             Сотрудники
           </h1>
           <p className="text-sm text-neutral-500 mt-0.5">
-            Управление персоналом склада
+            {filtered.length} из {employees.length} сотрудников
           </p>
         </div>
         <Button onClick={() => setShowAdd(true)}>
@@ -551,8 +674,8 @@ export default function EmployeesPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-end gap-3">
-        <div className="flex-1">
+      <div className="flex items-end gap-3 flex-wrap">
+        <div className="flex-1 min-w-48">
           <Input
             label="Поиск"
             placeholder="Имя, email или UUID..."
@@ -561,11 +684,11 @@ export default function EmployeesPage() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <div className="w-48">
+        <div className="w-44">
           <Select
             label="Роль"
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value as Role | '')}
+            value={roleFilter ?? ''}
+            onChange={(e) => setParam('role', e.target.value || null)}
           >
             <option value="">Все роли</option>
             {Object.values(Role).map((r) => (
@@ -573,6 +696,24 @@ export default function EmployeesPage() {
             ))}
           </Select>
         </div>
+        <div className="w-40">
+          <Select
+            label="Статус"
+            value={statusFilter ?? ''}
+            onChange={(e) => setParam('status', e.target.value || null)}
+          >
+            <option value="">Все</option>
+            <option value="active">Активные</option>
+            <option value="inactive">Неактивные</option>
+          </Select>
+        </div>
+        {hasFilters && (
+          <div className="pb-0.5">
+            <Button variant="ghost" size="sm" onClick={clearFilters}>
+              <X className="h-3.5 w-3.5" /> Сбросить
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Table */}
@@ -637,10 +778,39 @@ export default function EmployeesPage() {
               render: (e) => e.hiredAt ? formatDate(e.hiredAt) : '—',
             },
             {
+              key: 'workload',
+              header: 'Нагрузка',
+              render: (e) => {
+                const count = workloadMap[e.id] ?? 0
+                if (!count) return <span className="text-xs text-neutral-400">—</span>
+                return (
+                  <span className={[
+                    'inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full',
+                    count >= 5
+                      ? 'bg-danger-50 text-danger-700'
+                      : count >= 3
+                      ? 'bg-warning-50 text-warning-700'
+                      : 'bg-success-50 text-success-700',
+                  ].join(' ')}>
+                    <ClipboardList className="h-3 w-3" />
+                    {count}
+                  </span>
+                )
+              },
+            },
+            {
               key: 'actions',
               header: '',
               render: (e) => (
                 <div className="flex items-center gap-1 justify-end">
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    title="Назначить задачу"
+                    onClick={(ev) => { ev.stopPropagation(); setAssignEmployee(e) }}
+                  >
+                    <Zap className="h-3.5 w-3.5 text-warning-500" />
+                  </Button>
                   <Button
                     size="xs"
                     variant="ghost"
@@ -691,7 +861,16 @@ export default function EmployeesPage() {
         <EmployeeDetail
           employee={detailEmployee}
           onEdit={() => { setEditEmployee(detailEmployee); setDetailEmployee(null) }}
+          onAssign={() => { setAssignEmployee(detailEmployee); setDetailEmployee(null) }}
           onClose={() => setDetailEmployee(null)}
+        />
+      )}
+
+      {/* Quick assign modal */}
+      {assignEmployee && (
+        <QuickAssignModal
+          employee={assignEmployee}
+          onClose={() => setAssignEmployee(null)}
         />
       )}
 

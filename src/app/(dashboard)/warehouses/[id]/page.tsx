@@ -13,11 +13,10 @@ import { Select } from '@/shared/ui/select'
 import { FullPageSpinner } from '@/shared/ui/spinner'
 import { EmptyState } from '@/shared/ui/empty-state'
 import { ZoneType } from '@/entities/warehouse/types'
-import type { Zone } from '@/entities/warehouse/types'
+import type { Zone, Cell } from '@/entities/warehouse/types'
 import Link from 'next/link'
-import { MapPin, Globe, Plus, Layers, QrCode, Printer, Barcode } from 'lucide-react'
+import { MapPin, Globe, Plus, Layers, QrCode, Printer, Barcode, CheckSquare, Square } from 'lucide-react'
 import { BarcodeLabel } from '@/shared/ui/barcode-label'
-import type { Cell } from '@/entities/warehouse/types'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -48,6 +47,8 @@ const bulkCellsSchema = z.object({
   shelves: z.coerce.number().min(1).max(50),
 })
 type BulkCellsForm = z.infer<typeof bulkCellsSchema>
+
+// ─── QR Modal ─────────────────────────────────────────────────────────────────
 
 function QrModal({ zone, onClose }: { zone: Zone; onClose: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -83,18 +84,202 @@ function QrModal({ zone, onClose }: { zone: Zone; onClose: () => void }) {
         <canvas ref={canvasRef} className="border rounded-lg" />
         <div className="text-center">
           <p className="font-semibold text-neutral-900">{zone.name}</p>
-          <p className="font-mono-sku text-sm text-neutral-400">{zone.code}</p>
+          <p className="font-mono text-sm text-neutral-400">{zone.code}</p>
         </div>
         <div className="flex gap-3">
           <Button variant="secondary" onClick={onClose}>Закрыть</Button>
           <Button onClick={handlePrint}>
-            <Printer className="h-4 w-4 mr-1" /> Печать
+            <Printer className="h-4 w-4" /> Печать
           </Button>
         </div>
       </div>
     </Modal>
   )
 }
+
+// ─── EAN-13 Print Modal ────────────────────────────────────────────────────────
+
+interface PrintModalProps {
+  cells: Cell[]
+  zoneName: string
+  onClose: () => void
+}
+
+function CellPrintModal({ cells, zoneName, onClose }: PrintModalProps) {
+  const [selected, setSelected] = useState<Set<string>>(() => new Set(cells.map((c) => c.id)))
+  const [cols, setCols] = useState<2 | 3 | 4>(3)
+
+  const allSelected = selected.size === cells.length
+  const toggleAll = () =>
+    setSelected(allSelected ? new Set() : new Set(cells.map((c) => c.id)))
+
+  const toggle = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+
+  const toPrint = cells.filter((c) => selected.has(c.id))
+
+  const handlePrint = () => {
+    const win = window.open('', '_blank')
+    if (!win) return
+
+    // Collect SVG strings from DOM
+    const svgNodes = document.querySelectorAll<SVGElement>('[data-cell-barcode]')
+    const svgMap: Record<string, string> = {}
+    svgNodes.forEach((el) => {
+      const id = el.getAttribute('data-cell-barcode') ?? ''
+      svgMap[id] = el.outerHTML
+    })
+
+    const labels = toPrint.map((c) => {
+      const svg = svgMap[c.id] ?? ''
+      return `
+        <div class="label">
+          ${svg}
+          <p class="code">${c.code}</p>
+        </div>`
+    }).join('')
+
+    win.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>EAN-13 — ${zoneName}</title>
+        <style>
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body { font-family: monospace; padding: 12px; }
+          h2 { font-size: 13px; margin-bottom: 12px; color: #444; }
+          .grid {
+            display: grid;
+            grid-template-columns: repeat(${cols}, 1fr);
+            gap: 8px;
+          }
+          .label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 6px;
+            page-break-inside: avoid;
+          }
+          .label svg { width: 100%; max-width: 160px; }
+          .code { font-size: 9px; color: #555; margin-top: 3px; text-align: center; }
+          @media print {
+            body { padding: 4mm; }
+            .grid { gap: 4px; }
+          }
+        </style>
+      </head>
+      <body>
+        <h2>Штрихкоды ячеек EAN-13 — ${zoneName} (${toPrint.length} шт.)</h2>
+        <div class="grid">${labels}</div>
+        <script>window.onload = () => window.print()<\/script>
+      </body>
+      </html>
+    `)
+    win.document.close()
+  }
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={`Печать ШК ячеек — ${zoneName}`}
+      size="lg"
+    >
+      <div className="flex flex-col h-full">
+        {/* Toolbar */}
+        <div className="px-6 py-3 border-b border-neutral-100 flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggleAll}
+              className="flex items-center gap-1.5 text-sm text-neutral-600 hover:text-neutral-900"
+            >
+              {allSelected
+                ? <CheckSquare className="h-4 w-4 text-primary-600" />
+                : <Square className="h-4 w-4" />}
+              {allSelected ? 'Снять всё' : 'Выбрать всё'}
+            </button>
+            <span className="text-xs text-neutral-400">
+              {selected.size} / {cells.length} выбрано
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-neutral-500">Колонок:</span>
+            {([2, 3, 4] as const).map((n) => (
+              <button
+                key={n}
+                onClick={() => setCols(n)}
+                className={[
+                  'w-7 h-7 rounded text-xs font-medium border transition-colors',
+                  cols === n
+                    ? 'bg-primary-500 text-white border-primary-500'
+                    : 'border-neutral-200 text-neutral-600 hover:border-primary-300',
+                ].join(' ')}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Grid preview */}
+        <div
+          className="p-4 overflow-y-auto max-h-[52vh] bg-neutral-50"
+          style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: '10px' }}
+        >
+          {cells.map((cell) => {
+            const isOn = selected.has(cell.id)
+            return (
+              <button
+                key={cell.id}
+                onClick={() => toggle(cell.id)}
+                className={[
+                  'flex flex-col items-center border rounded-lg p-2 transition-all bg-white',
+                  isOn
+                    ? 'border-primary-400 shadow-sm ring-1 ring-primary-200'
+                    : 'border-neutral-200 opacity-40',
+                ].join(' ')}
+              >
+                <BarcodeLabel
+                  code={cell.code}
+                  barcode={cell.barcode}
+                  label={cell.code}
+                  width={1.4}
+                  height={44}
+                  svgProps={{ 'data-cell-barcode': cell.id } as Record<string, string>}
+                />
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-neutral-100 flex items-center justify-between">
+          <p className="text-sm text-neutral-500">
+            Будет напечатано:{' '}
+            <span className="font-semibold text-neutral-800">{toPrint.length}</span> этикеток
+          </p>
+          <div className="flex gap-3">
+            <Button variant="secondary" onClick={onClose}>Закрыть</Button>
+            <Button onClick={handlePrint} disabled={toPrint.length === 0}>
+              <Printer className="h-4 w-4" />
+              Печать {toPrint.length > 0 ? `(${toPrint.length})` : ''}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+// ─── Zone Print Button ─────────────────────────────────────────────────────────
 
 function ZonePrintButton({
   warehouseId,
@@ -108,6 +293,14 @@ function ZonePrintButton({
   const [enabled, setEnabled] = useState(false)
   const { data: cells, isFetching } = useCells(warehouseId, zone.id)
 
+  // When cells load after user clicked, trigger print modal
+  useEffect(() => {
+    if (enabled && cells && cells.length > 0 && !isFetching) {
+      onPrint(cells)
+      setEnabled(false)
+    }
+  }, [enabled, cells, isFetching, onPrint])
+
   const handleClick = () => {
     if (cells && cells.length > 0) {
       onPrint(cells)
@@ -116,24 +309,21 @@ function ZonePrintButton({
     }
   }
 
-  // Once cells load (after first click), open print modal
-  if (enabled && cells && cells.length > 0 && !isFetching) {
-    onPrint(cells)
-    setEnabled(false)
-  }
-
   return (
     <Button
       size="xs"
       variant="secondary"
       onClick={handleClick}
       loading={isFetching && enabled}
+      title="Печать EAN-13 штрихкодов ячеек"
     >
       <Barcode className="h-3 w-3" />
       ШК
     </Button>
   )
 }
+
+// ─── Main page ─────────────────────────────────────────────────────────────────
 
 export default function WarehousePage({
   params,
@@ -149,7 +339,7 @@ export default function WarehousePage({
   const [zoneOpen, setZoneOpen] = useState(false)
   const [cellsOpen, setCellsOpen] = useState<Zone | null>(null)
   const [qrZone, setQrZone] = useState<Zone | null>(null)
-  const [printCells, setPrintCells] = useState<Cell[] | null>(null)
+  const [printState, setPrintState] = useState<{ cells: Cell[]; zoneName: string } | null>(null)
 
   const zoneForm = useForm<CreateZoneForm>({
     resolver: zodResolver(createZoneSchema),
@@ -181,13 +371,14 @@ export default function WarehousePage({
         }
       }
     }
+    const zoneName = cellsOpen.name
     bulkCreateCells.mutate(
       { warehouseId: id, zoneId: cellsOpen.id, cells },
       {
         onSuccess: (res) => {
           setCellsOpen(null)
           cellsForm.reset()
-          if (res?.cells?.length) setPrintCells(res.cells)
+          if (res?.cells?.length) setPrintState({ cells: res.cells, zoneName })
         },
       },
     )
@@ -225,7 +416,7 @@ export default function WarehousePage({
               <Globe className="h-4 w-4" />
               {warehouse.timezone}
             </div>
-            <span className="font-mono-sku text-sm text-neutral-400">{warehouse.code}</span>
+            <span className="font-mono text-sm text-neutral-400">{warehouse.code}</span>
           </div>
         </div>
       </div>
@@ -263,7 +454,7 @@ export default function WarehousePage({
                     {ZONE_TYPE_LABELS[zone.type] ?? zone.type}
                   </Badge>
                 </div>
-                <p className="font-mono-sku text-sm text-neutral-400 mb-3">{zone.code}</p>
+                <p className="font-mono text-sm text-neutral-400 mb-3">{zone.code}</p>
                 {zone.description && (
                   <p className="text-sm text-neutral-500 mb-3">{zone.description}</p>
                 )}
@@ -287,7 +478,7 @@ export default function WarehousePage({
                   <ZonePrintButton
                     warehouseId={id}
                     zone={zone}
-                    onPrint={setPrintCells}
+                    onPrint={(cells) => setPrintState({ cells, zoneName: zone.name })}
                   />
                 </div>
               </Card>
@@ -382,71 +573,12 @@ export default function WarehousePage({
       </Modal>
 
       {/* EAN-13 Print Modal */}
-      {printCells && (
-        <Modal
-          open
-          onClose={() => setPrintCells(null)}
-          title={`Штрихкоды ячеек (EAN-13) — ${printCells.length} шт.`}
-          size="lg"
-        >
-          <div className="p-6 space-y-4">
-            <p className="text-sm text-neutral-500">
-              Штрихкоды сгенерированы для всех созданных ячеек. Нажмите «Печать» для вывода на принтер.
-            </p>
-
-            {/* Barcode grid — screen preview */}
-            <div
-              id="barcode-print-area"
-              className="grid gap-4 max-h-[55vh] overflow-y-auto border rounded-lg p-4 bg-white dark:bg-neutral-900"
-              style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}
-            >
-              {printCells.map((cell) => (
-                <div
-                  key={cell.id}
-                  className="flex flex-col items-center border border-neutral-200 dark:border-neutral-700 rounded p-2 bg-white"
-                >
-                  <BarcodeLabel
-                    code={cell.code}
-                    barcode={cell.barcode}
-                    label={cell.code}
-                    width={1.6}
-                    height={50}
-                  />
-                </div>
-              ))}
-            </div>
-
-            <div className="flex justify-end gap-3">
-              <Button variant="secondary" onClick={() => setPrintCells(null)}>
-                Закрыть
-              </Button>
-              <Button
-                onClick={() => {
-                  const area = document.getElementById('barcode-print-area')
-                  if (!area) return
-                  const win = window.open('', '_blank')
-                  if (!win) return
-                  win.document.write(`
-                    <html><head><title>Штрихкоды ячеек EAN-13</title>
-                    <style>
-                      body{font-family:monospace;margin:0;padding:16px}
-                      .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
-                      .cell{display:flex;flex-direction:column;align-items:center;border:1px solid #ccc;border-radius:4px;padding:8px;page-break-inside:avoid}
-                      svg{max-width:100%}
-                      @media print{body{margin:0}button{display:none}}
-                    </style></head>
-                    <body><div class="grid">${area.innerHTML}</div>
-                    <script>window.onload=()=>window.print()<\/script>
-                    </body></html>
-                  `)
-                  win.document.close()
-                }}
-              >
-                <Printer className="h-4 w-4 mr-1" /> Печать
-              </Button>
-            </div>
-          </div>
-        </Modal>
+      {printState && (
+        <CellPrintModal
+          cells={printState.cells}
+          zoneName={printState.zoneName}
+          onClose={() => setPrintState(null)}
+        />
       )}
 
       {/* QR Code Modal */}
