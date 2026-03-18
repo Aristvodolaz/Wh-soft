@@ -15,10 +15,13 @@ import { Select } from '@/shared/ui/select'
 import { SearchInput } from '@/shared/ui/search-input'
 import type { InventoryItem } from '@/entities/inventory/types'
 import { MovementType } from '@/entities/inventory/types'
-import { AlertTriangle, ArrowLeftRight, Barcode } from 'lucide-react'
+import { AlertTriangle, ArrowLeftRight, Barcode, ClipboardCheck } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import Link from 'next/link'
+import { ScanDialog } from '@/widgets/inventory/scan-dialog'
+import { MovementHistory } from '@/widgets/inventory/movement-history'
 
 const moveSchema = z.object({
   inventoryItemId: z.string().min(1, 'Укажите позицию'),
@@ -35,7 +38,6 @@ export default function InventoryPage() {
   const warehouseList = Array.isArray(warehouses) ? warehouses : []
   const { selectedWarehouseId, setWarehouse } = useAuthStore()
   const [search, setSearch] = useState('')
-  const [scanBarcode, setScanBarcode] = useState('')
   const [scanOpen, setScanOpen] = useState(false)
   const [moveOpen, setMoveOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null)
@@ -161,6 +163,13 @@ export default function InventoryPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <Link
+            href="/inventory/audit"
+            className="inline-flex items-center gap-1.5 h-8 px-3 text-sm font-medium rounded-md border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50 transition-colors"
+          >
+            <ClipboardCheck className="h-4 w-4" />
+            Инвентаризация
+          </Link>
           <Button variant="secondary" size="sm" onClick={() => setScanOpen(true)}>
             <Barcode className="h-4 w-4" />
             Сканировать
@@ -201,31 +210,20 @@ export default function InventoryPage() {
         )}
       </Card>
 
-      {/* Scan barcode modal */}
-      <Modal open={scanOpen} onClose={() => { setScanOpen(false); setScanBarcode('') }} title="Сканирование штрихкода">
-        <div className="p-6 space-y-4">
-          <Input
-            label="Штрихкод / QR-код"
-            placeholder="Введите или отсканируйте штрихкод..."
-            value={scanBarcode}
-            onChange={(e) => setScanBarcode(e.target.value)}
-            autoFocus
-          />
-          <p className="text-sm text-neutral-500">
-            Поднесите сканер к штрихкоду или введите код вручную. Информация об остатках будет показана автоматически.
-          </p>
-          {scanBarcode && (
-            <div className="rounded-lg bg-neutral-50 p-3 text-sm text-neutral-600">
-              Поиск: <span className="font-mono-sku font-medium">{scanBarcode}</span>
-            </div>
-          )}
-          <div className="flex justify-end">
-            <Button variant="secondary" onClick={() => { setScanOpen(false); setScanBarcode('') }}>
-              Закрыть
-            </Button>
-          </div>
-        </div>
-      </Modal>
+      {/* Scan barcode dialog (full API integration) */}
+      <ScanDialog
+        open={scanOpen}
+        onClose={() => setScanOpen(false)}
+        onSelectItem={(itemId) => {
+          setMoveOpen(true)
+          moveForm.setValue('inventoryItemId', itemId)
+        }}
+      />
+
+      {/* Movement history */}
+      {warehouseId && (
+        <MovementHistory warehouseId={warehouseId} limit={20} title="Последние движения" />
+      )}
 
       {/* Move inventory modal */}
       <Modal

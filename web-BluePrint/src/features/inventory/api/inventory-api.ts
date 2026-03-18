@@ -50,4 +50,14 @@ export const inventoryApi = {
     const { data } = await apiClient.post<MovementResponse>('/inventory/move', dto)
     return data
   },
+
+  listMovements: async (
+    warehouseId: string,
+    params?: { inventoryItemId?: string; limit?: number },
+  ): Promise<MovementResponse[]> => {
+    const { data } = await apiClient.get<MovementResponse[]>('/inventory/movements', {
+      params: { warehouseId, ...params },
+    })
+    return data
+  },
 }

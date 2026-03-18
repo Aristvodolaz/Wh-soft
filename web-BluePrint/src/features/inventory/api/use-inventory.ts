@@ -8,6 +8,7 @@ export const inventoryKeys = {
   product: (id: string) => ['products', id] as const,
   inventory: (warehouseId: string) => ['inventory', warehouseId] as const,
   scan: (barcode: string, warehouseId: string) => ['scan', barcode, warehouseId] as const,
+  movements: (warehouseId: string) => ['movements', warehouseId] as const,
 }
 
 export function useProducts() {
@@ -75,5 +76,13 @@ export function useScanBarcode(barcode: string, warehouseId: string) {
     queryKey: inventoryKeys.scan(barcode, warehouseId),
     queryFn: () => inventoryApi.scan(barcode, warehouseId),
     enabled: !!barcode && !!warehouseId,
+  })
+}
+
+export function useMovements(warehouseId: string, params?: { inventoryItemId?: string; limit?: number }) {
+  return useQuery({
+    queryKey: [...inventoryKeys.movements(warehouseId), params],
+    queryFn: () => inventoryApi.listMovements(warehouseId, params),
+    enabled: !!warehouseId,
   })
 }

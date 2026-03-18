@@ -17,6 +17,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Truck,
+  ClipboardCheck,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -32,6 +33,7 @@ const navItems: NavItem[] = [
   { href: '/warehouses', label: 'Склад', icon: <Warehouse className="h-5 w-5" /> },
   { href: '/receiving', label: 'Приёмка', icon: <Truck className="h-5 w-5" /> },
   { href: '/inventory/products', label: 'Товары', icon: <Package className="h-5 w-5" /> },
+  { href: '/inventory/audit', label: 'Инвентаризация', icon: <ClipboardCheck className="h-5 w-5" /> },
   { href: '/orders', label: 'Заказы', icon: <ShoppingCart className="h-5 w-5" /> },
   { href: '/tasks', label: 'Задачи', icon: <ClipboardList className="h-5 w-5" /> },
   { href: '/tasks/my', label: 'Мои задачи', icon: <ClipboardList className="h-5 w-5" /> },
