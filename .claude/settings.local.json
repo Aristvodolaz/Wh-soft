@@ -34,7 +34,10 @@
       "Bash(where gh:*)",
       "Read(//usr/local/bin/**)",
       "Read(//usr/bin/**)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(cmd.exe /c \"where gh\")",
+      "Bash(git commit -m \"chore: update allowed bash commands in settings:*)",
+      "Bash(git push:*)"
     ]
   }
 }
