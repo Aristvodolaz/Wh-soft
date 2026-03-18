@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   useTasks, useTaskTransition, useCreateTask, useAssignTask, useAutoAssign,
 } from '@/features/tasks/api/use-tasks'
@@ -14,8 +15,11 @@ import { Select } from '@/shared/ui/select'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Zap, UserCheck } from 'lucide-react'
-import { TaskType, TaskPriority, TASK_TYPE_LABELS, TASK_PRIORITY_LABELS } from '@/entities/task/types'
+import { Plus, Zap, UserCheck, Filter, X } from 'lucide-react'
+import {
+  TaskType, TaskPriority, TaskStatus,
+  TASK_TYPE_LABELS, TASK_PRIORITY_LABELS, TASK_STATUS_LABELS,
+} from '@/entities/task/types'
 import type { Task } from '@/entities/task/types'
 
 const createSchema = z.object({
@@ -34,6 +38,8 @@ const assignSchema = z.object({
 type AssignForm = z.infer<typeof assignSchema>
 
 export default function TasksPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const { data: warehouses } = useWarehouses()
   const { selectedWarehouseId, setWarehouse } = useAuthStore()
   const { data: tasks, isLoading } = useTasks({ warehouseId: selectedWarehouseId ?? undefined })
@@ -43,6 +49,28 @@ export default function TasksPage() {
   const autoAssign = useAutoAssign()
   const [createOpen, setCreateOpen] = useState(false)
   const [assignTarget, setAssignTarget] = useState<Task | null>(null)
+
+  // URL-driven filters
+  const statusFilter = searchParams.get('status') as TaskStatus | null
+  const priorityFilter = searchParams.get('priority') as TaskPriority | null
+  const typeFilter = searchParams.get('type') as TaskType | null
+
+  const setParam = useCallback((key: string, value: string | null) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (value) params.set(key, value)
+    else params.delete(key)
+    router.replace(`/tasks?${params.toString()}`, { scroll: false })
+  }, [router, searchParams])
+
+  const clearFilters = () => router.replace('/tasks', { scroll: false })
+  const hasFilters = statusFilter || priorityFilter || typeFilter
+
+  const filtered = (tasks ?? []).filter((t) => {
+    if (statusFilter && t.status !== statusFilter) return false
+    if (priorityFilter && t.priority !== priorityFilter) return false
+    if (typeFilter && t.type !== typeFilter) return false
+    return true
+  })
 
   const createForm = useForm<CreateForm>({
     resolver: zodResolver(createSchema),
@@ -74,7 +102,9 @@ export default function TasksPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">Задачи</h1>
-          <p className="text-sm text-neutral-500 mt-0.5">{tasks?.length ?? 0} задач</p>
+          <p className="text-sm text-neutral-500 mt-0.5">
+            {filtered.length} из {tasks?.length ?? 0} задач
+          </p>
         </div>
         <div className="flex items-center gap-3">
           {warehouses && warehouses.length > 0 && (
@@ -106,8 +136,49 @@ export default function TasksPage() {
         </div>
       </div>
 
+      {/* Filter bar */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <Filter className="h-4 w-4 text-neutral-400 shrink-0" />
+        <Select
+          value={statusFilter ?? ''}
+          onChange={(e) => setParam('status', e.target.value || null)}
+          className="w-40"
+        >
+          <option value="">Все статусы</option>
+          {Object.values(TaskStatus).map((s) => (
+            <option key={s} value={s}>{TASK_STATUS_LABELS[s]}</option>
+          ))}
+        </Select>
+        <Select
+          value={priorityFilter ?? ''}
+          onChange={(e) => setParam('priority', e.target.value || null)}
+          className="w-40"
+        >
+          <option value="">Все приоритеты</option>
+          {Object.values(TaskPriority).map((p) => (
+            <option key={p} value={p}>{TASK_PRIORITY_LABELS[p]}</option>
+          ))}
+        </Select>
+        <Select
+          value={typeFilter ?? ''}
+          onChange={(e) => setParam('type', e.target.value || null)}
+          className="w-44"
+        >
+          <option value="">Все типы</option>
+          {Object.values(TaskType).map((t) => (
+            <option key={t} value={t}>{TASK_TYPE_LABELS[t]}</option>
+          ))}
+        </Select>
+        {hasFilters && (
+          <Button variant="ghost" size="sm" onClick={clearFilters}>
+            <X className="h-3.5 w-3.5" />
+            Сбросить
+          </Button>
+        )}
+      </div>
+
       <TasksTable
-        tasks={tasks}
+        tasks={filtered}
         loading={isLoading}
         onStart={(t: Task) => transitions.start.mutate(t.id)}
         onComplete={(t: Task) => transitions.complete.mutate({ id: t.id })}
