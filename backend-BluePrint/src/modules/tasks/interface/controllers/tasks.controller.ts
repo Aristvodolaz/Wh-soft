@@ -43,7 +43,7 @@ export class TasksController {
 
   @Get()
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.ANALYST)
-  @ApiOperation({ summary: 'List all tasks (dispatcher / manager view)' })
+  @ApiOperation({ summary: 'Список всех задач (вид для менеджера)' })
   @ApiQuery({ name: 'warehouseId', type: String, required: false })
   @ApiQuery({ name: 'type', enum: TaskType, required: false })
   @ApiQuery({ name: 'status', enum: TaskStatus, required: false })
@@ -60,10 +60,10 @@ export class TasksController {
   @Get('my')
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.WORKER)
   @ApiOperation({
-    summary: 'My task inbox — active tasks assigned to the current user',
+    summary: 'Мои задачи — активные задачи, назначенные на текущего пользователя',
     description:
-      'Returns ASSIGNED and IN_PROGRESS tasks for the calling user, ' +
-      'ordered by priority (URGENT first) then due date.',
+      'Возвращает задачи в статусах ASSIGNED и IN_PROGRESS для текущего пользователя, ' +
+      'отсортированные по приоритету и сроку выполнения.',
   })
   @ApiOkResponse({ type: [TaskResponseDto] })
   getMyTasks(@CurrentUser() user: JwtPayload): Promise<TaskResponseDto[]> {
@@ -72,7 +72,7 @@ export class TasksController {
 
   @Get('overdue')
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER)
-  @ApiOperation({ summary: 'List overdue tasks (past due_at, not yet terminal)' })
+  @ApiOperation({ summary: 'Список просроченных задач (срок выполнения истек, задача не завершена)' })
   @ApiQuery({ name: 'warehouseId', type: String, required: false })
   @ApiOkResponse({ type: [TaskResponseDto] })
   getOverdue(
@@ -84,7 +84,7 @@ export class TasksController {
 
   @Get(':taskId')
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.ANALYST, Role.WORKER)
-  @ApiOperation({ summary: 'Get a single task by ID' })
+  @ApiOperation({ summary: 'Получить данные одной задачи по ID' })
   @ApiParam({ name: 'taskId', type: String })
   @ApiOkResponse({ type: TaskResponseDto })
   getTask(
@@ -98,7 +98,7 @@ export class TasksController {
 
   @Post()
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER)
-  @ApiOperation({ summary: 'Create a new task' })
+  @ApiOperation({ summary: 'Создать новую задачу' })
   @ApiCreatedResponse({ type: TaskResponseDto })
   createTask(
     @CurrentUser() user: JwtPayload,
@@ -111,7 +111,7 @@ export class TasksController {
 
   @Patch(':taskId/assign')
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER)
-  @ApiOperation({ summary: 'Assign a PENDING task to a specific worker' })
+  @ApiOperation({ summary: 'Назначить задачу на конкретного сотрудника' })
   @ApiParam({ name: 'taskId', type: String })
   @ApiOkResponse({ type: TaskResponseDto })
   assignTask(
@@ -126,10 +126,9 @@ export class TasksController {
   @HttpCode(HttpStatus.OK)
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.WORKER)
   @ApiOperation({
-    summary: 'Auto-assign next task',
+    summary: 'Авто-назначение следующей задачи',
     description:
-      'Finds the highest-priority PENDING task in the warehouse and assigns it to the ' +
-      'calling user. Workers use this for self-serve task claiming.',
+      'Находит наиболее приоритетную задачу в статусе PENDING и назначает её на текущего пользователя.',
   })
   @ApiQuery({ name: 'warehouseId', type: String, required: true })
   @ApiQuery({ name: 'type', enum: TaskType, required: false })
@@ -147,7 +146,7 @@ export class TasksController {
   @Post(':taskId/start')
   @HttpCode(HttpStatus.OK)
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.WORKER)
-  @ApiOperation({ summary: 'Start a task: ASSIGNED → IN_PROGRESS' })
+  @ApiOperation({ summary: 'Взять задачу в работу: ASSIGNED → IN_PROGRESS' })
   @ApiParam({ name: 'taskId', type: String })
   @ApiOkResponse({ type: TaskResponseDto })
   startTask(
@@ -160,7 +159,7 @@ export class TasksController {
   @Post(':taskId/complete')
   @HttpCode(HttpStatus.OK)
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.WORKER)
-  @ApiOperation({ summary: 'Complete a task: IN_PROGRESS → COMPLETED' })
+  @ApiOperation({ summary: 'Завершить задачу: IN_PROGRESS → COMPLETED' })
   @ApiParam({ name: 'taskId', type: String })
   @ApiOkResponse({ type: TaskResponseDto })
   completeTask(
@@ -174,7 +173,7 @@ export class TasksController {
   @Post(':taskId/fail')
   @HttpCode(HttpStatus.OK)
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.WORKER)
-  @ApiOperation({ summary: 'Mark a task as failed: IN_PROGRESS → FAILED' })
+  @ApiOperation({ summary: 'Пометить задачу как проваленную: IN_PROGRESS → FAILED' })
   @ApiParam({ name: 'taskId', type: String })
   @ApiOkResponse({ type: TaskResponseDto })
   failTask(
@@ -188,7 +187,7 @@ export class TasksController {
   @Post(':taskId/cancel')
   @HttpCode(HttpStatus.OK)
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER)
-  @ApiOperation({ summary: 'Cancel a task (any non-terminal status)' })
+  @ApiOperation({ summary: 'Отменить задачу (из любого нетерминального статуса)' })
   @ApiParam({ name: 'taskId', type: String })
   @ApiOkResponse({ type: TaskResponseDto })
   cancelTask(

@@ -2,9 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 import { RedisHealthIndicator } from './redis-health.indicator';
-import { ThrottlerRedisStorage } from './throttler-redis.storage';
-
-export const REDIS_CLIENT = 'REDIS_CLIENT';
+import { REDIS_CLIENT } from './redis.constants';
 
 @Module({
   providers: [
@@ -37,8 +35,7 @@ export const REDIS_CLIENT = 'REDIS_CLIENT';
       },
     },
     RedisHealthIndicator,
-    ThrottlerRedisStorage,
   ],
-  exports: [REDIS_CLIENT, RedisHealthIndicator, ThrottlerRedisStorage],
+  exports: [REDIS_CLIENT, RedisHealthIndicator],
 })
 export class RedisModule {}

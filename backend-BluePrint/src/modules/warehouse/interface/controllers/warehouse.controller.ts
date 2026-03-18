@@ -46,7 +46,7 @@ export class WarehouseController {
 
   @Get()
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.ANALYST)
-  @ApiOperation({ summary: 'List all warehouses for the current tenant' })
+  @ApiOperation({ summary: 'Список всех складов организации' })
   @ApiOkResponse({ type: [WarehouseResponseDto] })
   listWarehouses(@CurrentUser() user: JwtPayload): Promise<WarehouseResponseDto[]> {
     return this.warehouseService.listWarehouses(user.tenantId);
@@ -54,7 +54,7 @@ export class WarehouseController {
 
   @Post()
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN)
-  @ApiOperation({ summary: 'Create a new warehouse' })
+  @ApiOperation({ summary: 'Создать новый склад' })
   @ApiCreatedResponse({ type: WarehouseResponseDto })
   createWarehouse(
     @CurrentUser() user: JwtPayload,
@@ -65,7 +65,7 @@ export class WarehouseController {
 
   @Get(':warehouseId')
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.ANALYST)
-  @ApiOperation({ summary: 'Get a single warehouse by ID' })
+  @ApiOperation({ summary: 'Получить данные склада по ID' })
   @ApiParam({ name: 'warehouseId', type: String, format: 'uuid' })
   @ApiOkResponse({ type: WarehouseResponseDto })
   getWarehouse(
@@ -77,7 +77,7 @@ export class WarehouseController {
 
   @Patch(':warehouseId')
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN)
-  @ApiOperation({ summary: 'Update a warehouse' })
+  @ApiOperation({ summary: 'Обновить данные склада' })
   @ApiParam({ name: 'warehouseId', type: String, format: 'uuid' })
   @ApiOkResponse({ type: WarehouseResponseDto })
   updateWarehouse(
@@ -92,7 +92,7 @@ export class WarehouseController {
 
   @Get(':warehouseId/zones')
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.ANALYST, Role.WORKER)
-  @ApiOperation({ summary: 'List all zones in a warehouse' })
+  @ApiOperation({ summary: 'Список всех зон на складе' })
   @ApiParam({ name: 'warehouseId', type: String, format: 'uuid' })
   @ApiOkResponse({ type: [ZoneResponseDto] })
   listZones(
@@ -104,7 +104,7 @@ export class WarehouseController {
 
   @Post(':warehouseId/zones')
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN)
-  @ApiOperation({ summary: 'Create a zone in a warehouse' })
+  @ApiOperation({ summary: 'Создать зону на складе' })
   @ApiParam({ name: 'warehouseId', type: String, format: 'uuid' })
   @ApiCreatedResponse({ type: ZoneResponseDto })
   createZone(
@@ -121,10 +121,10 @@ export class WarehouseController {
   @HttpCode(HttpStatus.CREATED)
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN)
   @ApiOperation({
-    summary: 'Bulk create cells in a zone',
+    summary: 'Массовое создание ячеек в зоне',
     description:
-      'Creates up to 1 000 cells in a single transaction. ' +
-      'Rolls back entirely if any cell violates a unique constraint.',
+      'Создает до 1000 ячеек за одну транзакцию. ' +
+      'Откатывает изменения целиком, если любая ячейка нарушает уникальность (код или штрихкод).',
   })
   @ApiParam({ name: 'warehouseId', type: String, format: 'uuid' })
   @ApiCreatedResponse({ type: BulkCreateCellsResponseDto })
@@ -140,7 +140,7 @@ export class WarehouseController {
 
   @Get(':warehouseId/zones/:zoneId/cells')
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.ANALYST, Role.WORKER)
-  @ApiOperation({ summary: 'List all cells in a zone' })
+  @ApiOperation({ summary: 'Список всех ячеек в зоне' })
   @ApiParam({ name: 'warehouseId', type: String, format: 'uuid' })
   @ApiParam({ name: 'zoneId', type: String, format: 'uuid' })
   @ApiOkResponse({ type: [CellResponseDto] })

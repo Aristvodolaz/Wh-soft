@@ -33,7 +33,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard('local'))
   @Throttle({ default: { ttl: 60_000, limit: 10 } }) // Stricter rate limit on login
-  @ApiOperation({ summary: 'Login with email and password' })
+  @ApiOperation({ summary: 'Вход через email и пароль' })
   @ApiBody({ type: LoginDto })
   @ApiOkResponse({ type: TokenResponseDto, description: 'JWT token pair' })
   @ApiUnauthorizedResponse({ description: 'Invalid credentials or inactive account' })
@@ -50,7 +50,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard('jwt-refresh'))
   @ApiBearerAuth('refresh-token')
-  @ApiOperation({ summary: 'Rotate access and refresh tokens' })
+  @ApiOperation({ summary: 'Обновление пары access и refresh токенов' })
   @ApiBody({ type: RefreshTokenDto })
   @ApiOkResponse({ type: TokenResponseDto, description: 'New JWT token pair' })
   @ApiUnauthorizedResponse({ description: 'Refresh token invalid, expired, or reused' })
@@ -66,7 +66,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard('mobile-pin'))
   @Throttle({ default: { ttl: 60_000, limit: 10 } }) // Stricter rate limit
-  @ApiOperation({ summary: 'Login with mobile PIN (WORKER role only)' })
+  @ApiOperation({ summary: 'Вход по мобильному PIN-коду (только для роли WORKER)' })
   @ApiBody({ type: MobilePinLoginDto })
   @ApiOkResponse({ type: TokenResponseDto, description: 'JWT token pair' })
   @ApiUnauthorizedResponse({ description: 'Invalid PIN or not a WORKER account' })
