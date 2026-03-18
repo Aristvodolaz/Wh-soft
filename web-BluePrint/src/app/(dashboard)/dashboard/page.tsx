@@ -12,15 +12,14 @@ import { useEffect } from 'react'
 
 export default function DashboardPage() {
   const { data: warehouses } = useWarehouses()
-  const warehouseList = Array.isArray(warehouses) ? warehouses : []
   const { selectedWarehouseId, setWarehouse } = useAuthStore()
 
   // Auto-select first warehouse if none selected
   useEffect(() => {
-    if (!selectedWarehouseId && warehouseList.length) {
-      setWarehouse(warehouseList[0].id)
+    if (!selectedWarehouseId && warehouses?.length) {
+      setWarehouse(warehouses[0].id)
     }
-  }, [warehouseList, selectedWarehouseId, setWarehouse])
+  }, [warehouses, selectedWarehouseId, setWarehouse])
 
   const warehouseId = selectedWarehouseId ?? ''
   const { data: dashboard, isLoading } = useDashboard(warehouseId)
@@ -37,13 +36,13 @@ export default function DashboardPage() {
           <p className="text-sm text-neutral-500 mt-0.5">{formatDate(now, 'EEEE, d MMMM yyyy')}</p>
         </div>
         <div className="flex items-center gap-3">
-          {warehouseList.length > 0 && (
+          {warehouses && warehouses.length > 0 && (
             <Select
               value={selectedWarehouseId ?? ''}
               onChange={(e) => setWarehouse(e.target.value)}
               className="w-52"
             >
-              {warehouseList.map((w) => (
+              {warehouses.map((w) => (
                 <option key={w.id} value={w.id}>
                   {w.name}
                 </option>

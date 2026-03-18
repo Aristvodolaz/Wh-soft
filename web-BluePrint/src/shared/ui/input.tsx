@@ -34,10 +34,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={cn(
-              'w-full h-9 rounded-md border bg-white px-3 text-base text-neutral-900 placeholder:text-neutral-400',
+              'w-full h-9 rounded-md border bg-white dark:bg-neutral-800 px-3 text-base text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500',
               'transition-colors duration-150',
               'focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-500',
-              'disabled:bg-neutral-50 disabled:text-neutral-400 disabled:cursor-not-allowed',
+              'disabled:bg-neutral-50 dark:disabled:bg-neutral-700 disabled:text-neutral-400 disabled:cursor-not-allowed',
               error
                 ? 'border-danger-500 focus:ring-danger-100 focus:border-danger-500'
                 : 'border-neutral-300',

@@ -17,6 +17,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Truck,
+  ClipboardCheck,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -32,6 +33,7 @@ const navItems: NavItem[] = [
   { href: '/warehouses', label: 'Склад', icon: <Warehouse className="h-5 w-5" /> },
   { href: '/receiving', label: 'Приёмка', icon: <Truck className="h-5 w-5" /> },
   { href: '/inventory/products', label: 'Товары', icon: <Package className="h-5 w-5" /> },
+  { href: '/inventory/audit', label: 'Инвентаризация', icon: <ClipboardCheck className="h-5 w-5" /> },
   { href: '/orders', label: 'Заказы', icon: <ShoppingCart className="h-5 w-5" /> },
   { href: '/tasks', label: 'Задачи', icon: <ClipboardList className="h-5 w-5" /> },
   { href: '/tasks/my', label: 'Мои задачи', icon: <ClipboardList className="h-5 w-5" /> },
@@ -57,7 +59,7 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'flex flex-col h-full bg-white border-r border-neutral-200 transition-all duration-200',
+        'flex flex-col h-full bg-white dark:bg-neutral-800 border-r border-neutral-200 dark:border-neutral-700 transition-all duration-200',
         collapsed ? 'w-14' : 'w-60'
       )}
     >
@@ -85,8 +87,8 @@ export function Sidebar() {
                 className={cn(
                   'flex items-center gap-3 h-9 rounded-md px-2.5 text-sm font-medium transition-colors',
                   isActive(item.href)
-                    ? 'bg-primary-50 text-primary-700'
-                    : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+                    ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-neutral-100'
                 )}
               >
                 <span className={cn('shrink-0', isActive(item.href) ? 'text-primary-600' : '')}>
@@ -116,8 +118,8 @@ export function Sidebar() {
                 className={cn(
                   'flex items-center gap-3 h-9 rounded-md px-2.5 text-sm font-medium transition-colors',
                   isActive(item.href)
-                    ? 'bg-primary-50 text-primary-700'
-                    : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+                    ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-neutral-100'
                 )}
               >
                 <span className="shrink-0">{item.icon}</span>

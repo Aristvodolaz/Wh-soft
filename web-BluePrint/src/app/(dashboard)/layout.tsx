@@ -13,31 +13,37 @@ export default function DashboardLayout({
 }) {
   const router = useRouter()
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
-  const hasHydrated = useAuthStore((s) => s._hasHydrated)
-  const [isChecking, setIsChecking] = useState(true)
+  const [hydrated, setHydrated] = useState(false)
+
+  // Wait for persist to load tokens from localStorage before auth check (avoids false redirect to /login)
+  useEffect(() => {
+    console.log('🔄 Dashboard layout mounting, checking hydration...')
+    const unsub = useAuthStore.persist.onFinishHydration(() => {
+      console.log('✅ Zustand persist hydration finished')
+      setHydrated(true)
+    })
+    if (useAuthStore.persist.hasHydrated()) {
+      console.log('✅ Already hydrated')
+      setHydrated(true)
+    }
+    return unsub
+  }, [])
 
   useEffect(() => {
-    console.log('Dashboard layout effect:', { hasHydrated, isChecking })
-    
-    // Don't check auth until store has hydrated from localStorage
-    if (!hasHydrated) {
-      console.log('Waiting for hydration...')
+    if (!hydrated) {
+      console.log('⏳ Waiting for hydration...')
       return
     }
-
-    const authenticated = isAuthenticated()
-    console.log('Auth check result:', authenticated)
-    
-    if (!authenticated) {
-      console.log('Not authenticated, redirecting to login')
+    console.log('🔐 Checking authentication...')
+    if (!isAuthenticated()) {
+      console.log('❌ Not authenticated, redirecting to /login')
       router.replace('/login')
     } else {
-      console.log('Authenticated, showing dashboard')
-      setIsChecking(false)
+      console.log('✅ Authenticated, rendering dashboard')
     }
-  }, [hasHydrated, isAuthenticated, router])
+  }, [hydrated, isAuthenticated, router])
 
-  if (isChecking) {
+  if (!hydrated || !isAuthenticated()) {
     return <FullPageSpinner />
   }
 

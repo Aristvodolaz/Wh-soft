@@ -28,27 +28,14 @@ const PRIORITY_COLORS: Record<TaskPriority, string> = {
   [TaskPriority.URGENT]: 'text-danger-600 font-bold',
 }
 
-// Normalize API response to Task[] (handles array or { tasks/data/items: Task[] })
-function toTaskList(v: unknown): Task[] {
-  if (Array.isArray(v)) return v
-  if (v && typeof v === 'object') {
-    const o = v as Record<string, unknown>
-    if (Array.isArray(o.tasks)) return o.tasks as Task[]
-    if (Array.isArray(o.data)) return o.data as Task[]
-    if (Array.isArray(o.items)) return o.items as Task[]
-  }
-  return []
-}
-
 export default function MyTasksPage() {
   const { data: tasks, isLoading } = useMyTasks()
   const transitions = useTaskTransition()
 
-  const taskList = toTaskList(tasks)
-  const active = taskList.filter((t) =>
+  const active = (tasks ?? []).filter((t) =>
     [TaskStatus.ASSIGNED, TaskStatus.IN_PROGRESS].includes(t.status),
   )
-  const pending = taskList.filter((t) => t.status === TaskStatus.PENDING)
+  const pending = (tasks ?? []).filter((t) => t.status === TaskStatus.PENDING)
 
   return (
     <div className="p-6 space-y-6">
@@ -61,14 +48,14 @@ export default function MyTasksPage() {
 
       {isLoading ? (
         <Card><TableSkeleton rows={5} cols={4} /></Card>
-      ) : !taskList.length ? (
+      ) : !tasks?.length ? (
         <EmptyState
           title="Нет задач"
           description="У вас пока нет назначенных задач"
         />
       ) : (
         <div className="space-y-3">
-          {taskList.map((task) => (
+          {(tasks as Task[]).map((task) => (
             <Card key={task.id} className="p-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">

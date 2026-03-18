@@ -8,7 +8,6 @@ interface AuthState {
   refreshToken: string | null
   user: UserPayload | null
   selectedWarehouseId: string | null
-  _hasHydrated: boolean
 }
 
 interface AuthActions {
@@ -18,15 +17,19 @@ interface AuthActions {
   logout: () => void
   isAuthenticated: () => boolean
   hasRole: (role: Role) => boolean
-  setHasHydrated: (state: boolean) => void
 }
 
 type AuthStore = AuthState & AuthActions
 
+// Decode JWT payload; supports base64url (standard for JWT) so atob does not fail on - _
 function decodeJwt(token: string): UserPayload | null {
   try {
     const payload = token.split('.')[1]
-    const decoded = JSON.parse(atob(payload))
+    if (!payload) return null
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const pad = base64.length % 4
+    const padded = pad ? base64 + '='.repeat(4 - pad) : base64
+    const decoded = JSON.parse(atob(padded))
     return decoded as UserPayload
   } catch {
     return null
@@ -41,18 +44,25 @@ export const useAuthStore = create<AuthStore>()(
       refreshToken: null,
       user: null,
       selectedWarehouseId: null,
-      _hasHydrated: false,
 
       // Actions
       setTokens: (accessToken, refreshToken) => {
-        console.log('setTokens called')
-        const user = decodeJwt(accessToken)
-        console.log('Decoded user:', user)
-        // Update both Zustand store and localStorage
+        console.log('🔐 setTokens called:', {
+          accessTokenLength: accessToken?.length,
+          refreshTokenLength: refreshToken?.length,
+          accessTokenPreview: accessToken?.substring(0, 30) + '...',
+        })
         storage.setAccessToken(accessToken)
         storage.setRefreshToken(refreshToken)
+        const user = decodeJwt(accessToken)
+        console.log('🔐 JWT decoded:', {
+          user,
+          isValid: !!user,
+          exp: user?.exp,
+          expiresAt: user?.exp ? new Date(user.exp * 1000).toISOString() : 'N/A',
+        })
         set({ accessToken, refreshToken, user })
-        console.log('Tokens saved to store and localStorage')
+        console.log('🔐 Tokens saved to Zustand store')
       },
 
       setUser: (user) => set({ user }),
@@ -66,32 +76,34 @@ export const useAuthStore = create<AuthStore>()(
 
       isAuthenticated: () => {
         const { accessToken } = get()
-        console.log('isAuthenticated check - accessToken from store:', !!accessToken)
-        
+        console.log('🔍 isAuthenticated check:', {
+          hasAccessToken: !!accessToken,
+          accessTokenPreview: accessToken?.substring(0, 30) + '...',
+        })
         if (!accessToken) {
-          // Fallback to localStorage if Zustand hasn't hydrated yet
-          const storedToken = storage.getAccessToken()
-          console.log('No token in store, checking localStorage:', !!storedToken)
-          if (!storedToken) return false
-          const user = decodeJwt(storedToken)
-          if (!user) return false
-          const isValid = user.exp * 1000 > Date.now()
-          console.log('Token from localStorage valid:', isValid)
-          return isValid
+          console.log('❌ No access token in store')
+          return false
         }
         const user = decodeJwt(accessToken)
-        if (!user) return false
-        const isValid = user.exp * 1000 > Date.now()
-        console.log('Token from store valid:', isValid)
-        return isValid
+        if (!user) {
+          console.log('❌ Failed to decode JWT')
+          return false
+        }
+        const isExpired = user.exp * 1000 <= Date.now()
+        console.log('🔍 Token validation:', {
+          exp: user.exp,
+          expiresAt: new Date(user.exp * 1000).toISOString(),
+          now: new Date().toISOString(),
+          isExpired,
+        })
+        // Check not expired
+        return !isExpired
       },
 
       hasRole: (role) => {
         const { user } = get()
         return user?.role === role
       },
-
-      setHasHydrated: (state) => set({ _hasHydrated: state }),
     }),
     {
       name: 'wms-auth',
@@ -101,10 +113,6 @@ export const useAuthStore = create<AuthStore>()(
         user: state.user,
         selectedWarehouseId: state.selectedWarehouseId,
       }),
-      onRehydrateStorage: () => (state) => {
-        console.log('Zustand rehydration complete')
-        state?.setHasHydrated(true)
-      },
     }
   )
 )

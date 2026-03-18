@@ -23,11 +23,25 @@ apiClient.interceptors.request.use((config) => {
   return config
 })
 
-// Unwrap backend envelope { success, data, timestamp } so API layers get data directly
+// Unwrap Nest TransformInterceptor shape { success, data, timestamp } so callers see inner payload
 apiClient.interceptors.response.use((response) => {
-  const body = response.data as { success?: boolean; data?: unknown; timestamp?: string }
-  if (body && typeof body.success === 'boolean' && 'data' in body) {
-    response.data = body.data
+  const body = response.data
+  console.log('🌐 API Response:', {
+    url: response.config.url,
+    status: response.status,
+    hasSuccessField: body && 'success' in body,
+    hasDataField: body && 'data' in body,
+    bodyKeys: body && typeof body === 'object' ? Object.keys(body) : [],
+  })
+  if (
+    body &&
+    typeof body === 'object' &&
+    'success' in body &&
+    'data' in body &&
+    typeof (body as { success: unknown }).success === 'boolean'
+  ) {
+    console.log('📦 Unwrapping Nest envelope, inner data:', (body as { data: unknown }).data)
+    response.data = (body as { data: unknown }).data
   }
   return response
 })
@@ -58,16 +72,15 @@ apiClient.interceptors.response.use(
           throw new Error('No refresh token')
         }
 
-        const response = await apiClient.post<TokenResponse>('/auth/refresh', {
+        const { data } = await apiClient.post<TokenResponse>('/auth/refresh', {
           refreshToken,
         })
 
-        const tokens = response.data
-        storage.setAccessToken(tokens.accessToken)
-        storage.setRefreshToken(tokens.refreshToken)
+        storage.setAccessToken(data.accessToken)
+        storage.setRefreshToken(data.refreshToken)
 
-        onTokenRefreshed(tokens.accessToken)
-        originalRequest.headers.Authorization = `Bearer ${tokens.accessToken}`
+        onTokenRefreshed(data.accessToken)
+        originalRequest.headers.Authorization = `Bearer ${data.accessToken}`
 
         return apiClient(originalRequest)
       } catch {

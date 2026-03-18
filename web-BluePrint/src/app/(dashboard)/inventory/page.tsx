@@ -35,7 +35,6 @@ type MoveForm = z.infer<typeof moveSchema>
 
 export default function InventoryPage() {
   const { data: warehouses } = useWarehouses()
-  const warehouseList = Array.isArray(warehouses) ? warehouses : []
   const { selectedWarehouseId, setWarehouse } = useAuthStore()
   const [search, setSearch] = useState('')
   const [scanOpen, setScanOpen] = useState(false)
@@ -50,10 +49,10 @@ export default function InventoryPage() {
   })
 
   useEffect(() => {
-    if (!selectedWarehouseId && warehouseList.length) {
-      setWarehouse(warehouseList[0].id)
+    if (!selectedWarehouseId && warehouses?.length) {
+      setWarehouse(warehouses[0].id)
     }
-  }, [warehouseList, selectedWarehouseId, setWarehouse])
+  }, [warehouses, selectedWarehouseId, setWarehouse])
 
   const warehouseId = selectedWarehouseId ?? ''
   const { data: items, isLoading } = useInventory(warehouseId)
@@ -178,13 +177,13 @@ export default function InventoryPage() {
             <ArrowLeftRight className="h-4 w-4" />
             Переместить
           </Button>
-          {warehouseList.length > 0 && (
+          {warehouses && warehouses.length > 0 && (
             <Select
               value={selectedWarehouseId ?? ''}
               onChange={(e) => setWarehouse(e.target.value)}
               className="w-52"
             >
-              {warehouseList.map((w) => (
+              {warehouses.map((w) => (
                 <option key={w.id} value={w.id}>{w.name}</option>
               ))}
             </Select>

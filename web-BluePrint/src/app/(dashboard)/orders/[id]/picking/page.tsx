@@ -14,11 +14,7 @@ import { OrderStatus, ORDER_STATUS_LABELS } from '@/entities/order/types'
 import toast from 'react-hot-toast'
 import { cn } from '@/shared/lib/cn'
 
-export default function PickingPage({
-  params,
-}: {
-  params: { id: string }
-}) {
+export default function PickingPage({ params }: { params: { id: string } }) {
   const { id } = params
   const { data: order, isLoading } = useOrder(id)
   const transitions = useOrderTransition()

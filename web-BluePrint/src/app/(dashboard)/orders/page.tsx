@@ -32,7 +32,6 @@ export default function OrdersPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { data: warehouses } = useWarehouses()
-  const warehouseList = Array.isArray(warehouses) ? warehouses : []
   const { selectedWarehouseId, setWarehouse } = useAuthStore()
   const { data: orders, isLoading } = useOrders({ warehouseId: selectedWarehouseId ?? undefined })
   const createOrder = useCreateOrder()
@@ -95,13 +94,13 @@ export default function OrdersPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {warehouseList.length > 0 && (
+          {warehouses && warehouses.length > 0 && (
             <Select
               value={selectedWarehouseId ?? ''}
               onChange={(e) => setWarehouse(e.target.value)}
               className="w-48"
             >
-              {warehouseList.map((w) => (
+              {warehouses.map((w) => (
                 <option key={w.id} value={w.id}>{w.name}</option>
               ))}
             </Select>
@@ -149,7 +148,7 @@ export default function OrdersPage() {
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
           <Select label="Склад" required {...register('warehouseId')}>
             <option value="">Выберите склад</option>
-            {warehouseList.map((w) => (
+            {warehouses?.map((w) => (
               <option key={w.id} value={w.id}>{w.name}</option>
             ))}
           </Select>

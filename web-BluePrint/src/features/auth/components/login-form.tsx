@@ -35,17 +35,16 @@ export function LoginForm() {
   const { mutate: login, isPending } = useMutation({
     mutationFn: authApi.login,
     onSuccess: (data) => {
-      console.log('Login success, full response data:', data)
-      console.log('Token fields:', { 
-        accessToken: data.accessToken,
-        refreshToken: data.refreshToken,
-        access_token: (data as any).access_token,
-        refresh_token: (data as any).refresh_token
+      console.log('✅ Login response received:', {
+        hasAccessToken: !!data.accessToken,
+        hasRefreshToken: !!data.refreshToken,
+        accessTokenPreview: data.accessToken?.substring(0, 20) + '...',
+        role: data.role,
       })
       setTokens(data.accessToken, data.refreshToken)
-      console.log('Tokens set, navigating to dashboard...')
+      console.log('✅ Tokens saved to store, redirecting to /dashboard')
       toast.success('Добро пожаловать!')
-      router.replace('/dashboard')
+      router.push('/dashboard')
     },
     onError: (error: unknown) => {
       const status = (error as { response?: { status?: number } })?.response?.status

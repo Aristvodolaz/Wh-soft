@@ -39,11 +39,7 @@ const addItemSchema = z.object({
 })
 type AddItemForm = z.infer<typeof addItemSchema>
 
-export default function OrderDetailPage({
-  params,
-}: {
-  params: { id: string }
-}) {
+export default function OrderDetailPage({ params }: { params: { id: string } }) {
   const { id } = params
   const { data: order, isLoading } = useOrder(id)
   const { data: products } = useProducts()

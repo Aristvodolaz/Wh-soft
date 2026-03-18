@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw'
 
-const BASE = 'http://localhost:3030'
+const BASE = 'http://localhost:3030/api/v1'
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
