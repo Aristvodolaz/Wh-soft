@@ -21,7 +21,7 @@ import {
 import {
   Users, Search, CheckCircle, XCircle, Clock, Target,
   Plus, Pencil, Trash2, BarChart2, ListTodo, UserCircle,
-  Filter, X, Zap, ClipboardList,
+  Filter, X, Zap, ClipboardList, Shuffle, Copy, Check,
 } from 'lucide-react'
 import { formatDate } from '@/shared/lib/format'
 import { Role } from '@/entities/auth/types'
@@ -98,12 +98,28 @@ function EmployeeFormModal({
   onSave: (data: EmployeeForm) => void
   onClose: () => void
 }) {
+  const [copied, setCopied] = useState(false)
+
   const form = useForm<EmployeeForm>({
     resolver: zodResolver(employeeSchema),
     defaultValues: initial
       ? { ...initial }
       : { role: Role.WORKER, isActive: true },
   })
+
+  const handleGenerateUuid = useCallback(() => {
+    const newId = crypto.randomUUID()
+    form.setValue('id', newId, { shouldValidate: true })
+  }, [form])
+
+  const handleCopyUuid = useCallback(() => {
+    const id = form.getValues('id')
+    if (!id) return
+    navigator.clipboard.writeText(id).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    })
+  }, [form])
 
   return (
     <Modal
@@ -127,15 +143,58 @@ function EmployeeFormModal({
             {...form.register('lastName')}
           />
         </div>
-        <Input
-          label="UUID сотрудника"
-          placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-          required
-          helperText="Должен совпадать с ID пользователя в системе"
-          error={form.formState.errors.id?.message}
-          disabled={!!initial}
-          {...form.register('id')}
-        />
+
+        {/* UUID field with generate / copy actions */}
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+            UUID сотрудника <span className="text-danger-500">*</span>
+          </label>
+          <div className="flex gap-2">
+            <input
+              className={[
+                'flex-1 h-9 px-3 text-sm rounded-lg border bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100',
+                'focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent',
+                'placeholder:text-neutral-400 font-mono',
+                initial
+                  ? 'bg-neutral-50 dark:bg-neutral-800 cursor-not-allowed text-neutral-500'
+                  : '',
+                form.formState.errors.id
+                  ? 'border-danger-400'
+                  : 'border-neutral-200 dark:border-neutral-700',
+              ].join(' ')}
+              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+              disabled={!!initial}
+              {...form.register('id')}
+            />
+            {!initial && (
+              <button
+                type="button"
+                onClick={handleGenerateUuid}
+                title="Сгенерировать UUID"
+                className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors whitespace-nowrap"
+              >
+                <Shuffle className="h-3.5 w-3.5 text-primary-500" />
+                Сгенерировать
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleCopyUuid}
+              title="Скопировать UUID"
+              className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+            >
+              {copied
+                ? <Check className="h-3.5 w-3.5 text-success-500" />
+                : <Copy className="h-3.5 w-3.5 text-neutral-400" />}
+            </button>
+          </div>
+          {form.formState.errors.id && (
+            <p className="text-xs text-danger-500">{form.formState.errors.id.message}</p>
+          )}
+          <p className="text-xs text-neutral-400">
+            Должен совпадать с ID пользователя в системе, или сгенерируйте новый
+          </p>
+        </div>
         <Input
           label="Email"
           type="email"
