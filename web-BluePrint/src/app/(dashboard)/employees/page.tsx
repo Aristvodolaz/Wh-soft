@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEmployeeStore, type EmployeeProfile } from '@/features/employees/store/employee-store'
 import { useEmployeeKpi } from '@/features/analytics/api/use-analytics'
@@ -21,15 +21,34 @@ import {
 import {
   Users, Search, CheckCircle, XCircle, Clock, Target,
   Plus, Pencil, Trash2, BarChart2, ListTodo, UserCircle,
-  Filter, X, Zap, ClipboardList,
+  Filter, X, Zap, ClipboardList, Shuffle, Copy, Check,
 } from 'lucide-react'
 import { formatDate } from '@/shared/lib/format'
+import type { EmployeeKpi } from '@/entities/analytics/types'
+
+// Backend returns byType as { PICK: n, ... }; MSW may return [{ type, completed, failed }]
+function kpiByTypeToRows(byType: EmployeeKpi['byType'] | undefined) {
+  if (!byType) return [] as { type: string; completed: number; failed: number }[]
+  if (Array.isArray(byType)) {
+    return byType.map((t) => ({
+      type: t.type,
+      completed: t.completed,
+      failed: t.failed,
+    }))
+  }
+  return Object.entries(byType).map(([type, completed]) => ({
+    type,
+    completed: Number(completed) || 0,
+    failed: 0,
+  }))
+}
 import { Role } from '@/entities/auth/types'
 import { TaskStatus } from '@/entities/task/types'
 import type { Task } from '@/entities/task/types'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import toast from 'react-hot-toast'
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -98,12 +117,28 @@ function EmployeeFormModal({
   onSave: (data: EmployeeForm) => void
   onClose: () => void
 }) {
+  const [copied, setCopied] = useState(false)
+
   const form = useForm<EmployeeForm>({
     resolver: zodResolver(employeeSchema),
     defaultValues: initial
       ? { ...initial }
       : { role: Role.WORKER, isActive: true },
   })
+
+  const handleGenerateUuid = useCallback(() => {
+    const newId = crypto.randomUUID()
+    form.setValue('id', newId, { shouldValidate: true })
+  }, [form])
+
+  const handleCopyUuid = useCallback(() => {
+    const id = form.getValues('id')
+    if (!id) return
+    navigator.clipboard.writeText(id).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    })
+  }, [form])
 
   return (
     <Modal
@@ -127,15 +162,58 @@ function EmployeeFormModal({
             {...form.register('lastName')}
           />
         </div>
-        <Input
-          label="UUID сотрудника"
-          placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-          required
-          helperText="Должен совпадать с ID пользователя в системе"
-          error={form.formState.errors.id?.message}
-          disabled={!!initial}
-          {...form.register('id')}
-        />
+
+        {/* UUID field with generate / copy actions */}
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+            UUID сотрудника <span className="text-danger-500">*</span>
+          </label>
+          <div className="flex gap-2">
+            <input
+              className={[
+                'flex-1 h-9 px-3 text-sm rounded-lg border bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100',
+                'focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent',
+                'placeholder:text-neutral-400 font-mono',
+                initial
+                  ? 'bg-neutral-50 dark:bg-neutral-800 cursor-not-allowed text-neutral-500'
+                  : '',
+                form.formState.errors.id
+                  ? 'border-danger-400'
+                  : 'border-neutral-200 dark:border-neutral-700',
+              ].join(' ')}
+              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+              disabled={!!initial}
+              {...form.register('id')}
+            />
+            {!initial && (
+              <button
+                type="button"
+                onClick={handleGenerateUuid}
+                title="Сгенерировать UUID"
+                className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors whitespace-nowrap"
+              >
+                <Shuffle className="h-3.5 w-3.5 text-primary-500" />
+                Сгенерировать
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleCopyUuid}
+              title="Скопировать UUID"
+              className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+            >
+              {copied
+                ? <Check className="h-3.5 w-3.5 text-success-500" />
+                : <Copy className="h-3.5 w-3.5 text-neutral-400" />}
+            </button>
+          </div>
+          {form.formState.errors.id && (
+            <p className="text-xs text-danger-500">{form.formState.errors.id.message}</p>
+          )}
+          <p className="text-xs text-neutral-400">
+            Должен совпадать с ID пользователя в системе, или сгенерируйте новый
+          </p>
+        </div>
         <Input
           label="Email"
           type="email"
@@ -190,15 +268,23 @@ function EmployeeKpiPanel({ employeeId }: { employeeId: string }) {
 
   const { data: kpi, isLoading } = useEmployeeKpi(employeeId, submitted.from, submitted.to)
 
-  const byTypeData = kpi?.byType?.map((t) => ({
+  const byTypeData = kpiByTypeToRows(kpi?.byType).map((t) => ({
     name: t.type,
     Выполнено: t.completed,
     Провалено: t.failed,
-  })) ?? []
+  }))
 
-  const accuracyPct = kpi?.accuracyRate != null
-    ? (kpi.accuracyRate * 100).toFixed(1) + '%'
-    : '—'
+  // API: 0–100; mocks may use 0–1 ratio
+  const accuracyPct =
+    kpi?.accuracyRate != null
+      ? `${(kpi.accuracyRate > 1 ? kpi.accuracyRate : kpi.accuracyRate * 100).toFixed(1)}%`
+      : '—'
+  const accuracyRatio =
+    kpi?.accuracyRate != null
+      ? kpi.accuracyRate > 1
+        ? kpi.accuracyRate / 100
+        : kpi.accuracyRate
+      : null
   const avgMin = kpi?.avgCompletionMinutes != null
     ? Math.round(kpi.avgCompletionMinutes) + ' мин'
     : '—'
@@ -258,9 +344,9 @@ function EmployeeKpiPanel({ employeeId }: { employeeId: string }) {
               value={accuracyPct}
               icon={<Target className="h-5 w-5 text-primary-500" />}
               accent={
-                kpi.accuracyRate != null && kpi.accuracyRate >= 0.9
+                accuracyRatio != null && accuracyRatio >= 0.9
                   ? 'success'
-                  : kpi.accuracyRate != null && kpi.accuracyRate < 0.7
+                  : accuracyRatio != null && accuracyRatio < 0.7
                   ? 'danger'
                   : 'none'
               }
@@ -374,14 +460,25 @@ function QuickAssignModal({
 }) {
   const { data: tasks, isLoading } = useTasks()
   const assignTask = useAssignTask()
+  const [assigneeUuid, setAssigneeUuid] = useState(employee.id)
+  useEffect(() => setAssigneeUuid(employee.id), [employee.id])
 
   const pending = (tasks ?? []).filter(
     (t) => t.status === TaskStatus.PENDING && !t.assignedTo,
   )
 
   const handleAssign = async (task: Task) => {
-    await assignTask.mutateAsync({ taskId: task.id, userId: employee.id })
-    onClose()
+    const parsed = z.string().uuid().safeParse(assigneeUuid.trim())
+    if (!parsed.success) {
+      toast.error('Введите корректный UUID пользователя (users.id — учётная запись WMS).')
+      return
+    }
+    try {
+      await assignTask.mutateAsync({ taskId: task.id, userId: parsed.data })
+      onClose()
+    } catch {
+      // toast в useAssignTask
+    }
   }
 
   return (
@@ -392,6 +489,17 @@ function QuickAssignModal({
       size="lg"
     >
       <div className="p-6 space-y-4">
+        <Input
+          label="UUID исполнителя (users.id)"
+          placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+          className="font-mono text-sm"
+          value={assigneeUuid}
+          onChange={(e) => setAssigneeUuid(e.target.value)}
+        />
+        <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          Можно вставить любой UUID из БД <code className="font-mono">users</code>. ID из карточки
+          сотрудника подставлен по умолчанию — замените при необходимости.
+        </p>
         {isLoading ? (
           <div className="space-y-2">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -439,6 +547,89 @@ function QuickAssignModal({
         <div className="flex justify-end">
           <Button variant="secondary" onClick={onClose}>Закрыть</Button>
         </div>
+      </div>
+    </Modal>
+  )
+}
+
+/** Назначение без выбора сотрудника — только задача + UUID пользователя */
+function AssignTaskByUuidModal({ onClose }: { onClose: () => void }) {
+  const { data: tasks, isLoading } = useTasks()
+  const assignTask = useAssignTask()
+  const pending = (tasks ?? []).filter(
+    (t) => t.status === TaskStatus.PENDING && !t.assignedTo,
+  )
+  const [taskId, setTaskId] = useState('')
+  const [userUuid, setUserUuid] = useState('')
+  useEffect(() => {
+    if (pending.length && !taskId) setTaskId(pending[0].id)
+  }, [pending, taskId])
+
+  const handleSubmit = async () => {
+    const u = z.string().uuid().safeParse(userUuid.trim())
+    if (!u.success) {
+      toast.error('Введите корректный UUID пользователя (users.id).')
+      return
+    }
+    if (!taskId) {
+      toast.error('Выберите задачу.')
+      return
+    }
+    try {
+      await assignTask.mutateAsync({ taskId, userId: u.data })
+      onClose()
+    } catch {
+      /* toast в useAssignTask */
+    }
+  }
+
+  return (
+    <Modal open onClose={onClose} title="Назначить задачу по UUID" size="lg">
+      <div className="p-6 space-y-4">
+        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+          Укажите задачу в статусе «Ожидает» и UUID зарегистрированного пользователя.
+        </p>
+        {isLoading ? (
+          <Skeleton className="h-10 w-full rounded" />
+        ) : !pending.length ? (
+          <EmptyState
+            icon={<ClipboardList className="h-10 w-10" />}
+            title="Нет задач в очереди"
+            description="Создайте задачу или дождитесь статуса «Ожидает»"
+          />
+        ) : (
+          <>
+            <Select label="Задача" value={taskId} onChange={(e) => setTaskId(e.target.value)}>
+              {pending.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.title} · {t.type}
+                </option>
+              ))}
+            </Select>
+            <Input
+              label="UUID пользователя (users.id)"
+              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+              className="font-mono text-sm"
+              value={userUuid}
+              onChange={(e) => setUserUuid(e.target.value)}
+            />
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="secondary" type="button" onClick={onClose}>
+                Отмена
+              </Button>
+              <Button type="button" loading={assignTask.isPending} onClick={handleSubmit}>
+                <Zap className="h-4 w-4" /> Назначить
+              </Button>
+            </div>
+          </>
+        )}
+        {!pending.length && !isLoading && (
+          <div className="flex justify-end">
+            <Button variant="secondary" onClick={onClose}>
+              Закрыть
+            </Button>
+          </div>
+        )}
       </div>
     </Modal>
   )
@@ -569,6 +760,7 @@ export default function EmployeesPage() {
   const [editEmployee, setEditEmployee] = useState<EmployeeProfile | null>(null)
   const [detailEmployee, setDetailEmployee] = useState<EmployeeProfile | null>(null)
   const [assignEmployee, setAssignEmployee] = useState<EmployeeProfile | null>(null)
+  const [uuidAssignOpen, setUuidAssignOpen] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<EmployeeProfile | null>(null)
 
   // URL-driven filters
@@ -647,9 +839,14 @@ export default function EmployeesPage() {
             {filtered.length} из {employees.length} сотрудников
           </p>
         </div>
-        <Button onClick={() => setShowAdd(true)}>
-          <Plus className="h-4 w-4" /> Добавить сотрудника
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" onClick={() => setUuidAssignOpen(true)}>
+            <Zap className="h-4 w-4" /> Назначить по UUID
+          </Button>
+          <Button onClick={() => setShowAdd(true)}>
+            <Plus className="h-4 w-4" /> Добавить сотрудника
+          </Button>
+        </div>
       </div>
 
       {/* Summary KPIs */}
@@ -872,6 +1069,10 @@ export default function EmployeesPage() {
           employee={assignEmployee}
           onClose={() => setAssignEmployee(null)}
         />
+      )}
+
+      {uuidAssignOpen && (
+        <AssignTaskByUuidModal onClose={() => setUuidAssignOpen(false)} />
       )}
 
       {/* Delete confirm */}

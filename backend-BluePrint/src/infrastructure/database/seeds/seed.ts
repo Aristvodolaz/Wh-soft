@@ -125,14 +125,16 @@ async function seed(): Promise<void> {
          RETURNING id`,
         [testTenantId, warehouseAdminEmail, hash],
       );
-      console.log(`[Seed] ✓ Warehouse admin created: "${warehouseAdminEmail}" (id: ${newAdmin.id})`);
+      console.log(
+        `[Seed] ✓ Warehouse admin created: "${warehouseAdminEmail}" (id: ${newAdmin.id})`,
+      );
     }
 
     // ── Create Warehouse ───────────────────────────────────────────────────────
     const whName = 'Central Distribution Center';
     const whCode = 'CDC-01';
     let warehouseId: string;
-    
+
     const existingWh = await queryRunner.query(
       `SELECT id FROM warehouses WHERE tenant_id = $1 AND code = $2 LIMIT 1`,
       [testTenantId, whCode],

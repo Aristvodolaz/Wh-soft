@@ -17,7 +17,7 @@ import {
   TASK_PRIORITY_LABELS,
 } from '@/entities/task/types'
 import { formatDateTime } from '@/shared/lib/format'
-import { Play, CheckCircle, XCircle, UserCheck } from 'lucide-react'
+import { Play, CheckCircle, XCircle, UserCheck, HandMetal } from 'lucide-react'
 
 const STATUS_BADGE: Record<TaskStatus, 'active' | 'pending' | 'in-progress' | 'completed' | 'cancelled' | 'failed' | 'draft'> = {
   [TaskStatus.PENDING]: 'pending',
@@ -42,9 +42,10 @@ interface TasksTableProps {
   onComplete?: (task: Task) => void
   onCancel?: (task: Task) => void
   onAssign?: (task: Task) => void
+  onClaim?: (task: Task) => void
 }
 
-export function TasksTable({ tasks = [], loading, onStart, onComplete, onCancel, onAssign }: TasksTableProps) {
+export function TasksTable({ tasks = [], loading, onStart, onComplete, onCancel, onAssign, onClaim }: TasksTableProps) {
   const [search, setSearch] = useState('')
 
   const filtered = tasks.filter((t) => {
@@ -96,8 +97,13 @@ export function TasksTable({ tasks = [], loading, onStart, onComplete, onCancel,
       header: 'Действия',
       render: (row: Task) => (
         <div className="flex items-center gap-1">
-          {row.status === TaskStatus.PENDING && (
-            <Button variant="ghost" size="icon-sm" title="Назначить" onClick={() => onAssign?.(row)}>
+          {row.status === TaskStatus.PENDING && onClaim && (
+            <Button variant="ghost" size="icon-sm" title="Забронировать на себя" onClick={() => onClaim(row)}>
+              <HandMetal className="h-4 w-4 text-warning-600" />
+            </Button>
+          )}
+          {row.status === TaskStatus.PENDING && onAssign && (
+            <Button variant="ghost" size="icon-sm" title="Назначить сотруднику" onClick={() => onAssign(row)}>
               <UserCheck className="h-4 w-4 text-primary-600" />
             </Button>
           )}

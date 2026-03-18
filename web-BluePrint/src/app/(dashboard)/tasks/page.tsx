@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
-  useTasks, useTaskTransition, useCreateTask, useAssignTask, useAutoAssign,
+  useTasks, useTaskTransition, useCreateTask, useAssignTask, useAutoAssign, useClaimTask,
 } from '@/features/tasks/api/use-tasks'
 import { useWarehouses } from '@/features/warehouses/api/use-warehouses'
 import { useAuthStore } from '@/features/auth/store/auth-store'
@@ -33,7 +33,10 @@ const createSchema = z.object({
 type CreateForm = z.infer<typeof createSchema>
 
 const assignSchema = z.object({
-  userId: z.string().min(1, 'Укажите ID сотрудника'),
+  userId: z
+    .string()
+    .min(1, 'Введите UUID')
+    .uuid('Нужен корректный UUID пользователя (users.id), например из БД или профиля'),
 })
 type AssignForm = z.infer<typeof assignSchema>
 
@@ -47,6 +50,7 @@ export default function TasksPage() {
   const createTask = useCreateTask()
   const assignTask = useAssignTask()
   const autoAssign = useAutoAssign()
+  const claimTask = useClaimTask()
   const [createOpen, setCreateOpen] = useState(false)
   const [assignTarget, setAssignTarget] = useState<Task | null>(null)
 
@@ -184,6 +188,7 @@ export default function TasksPage() {
         onComplete={(t: Task) => transitions.complete.mutate({ id: t.id })}
         onCancel={(t: Task) => transitions.cancel.mutate(t.id)}
         onAssign={(t: Task) => setAssignTarget(t)}
+        onClaim={(t: Task) => claimTask.mutate(t.id)}
       />
 
       {/* Create Task Modal */}
@@ -230,14 +235,15 @@ export default function TasksPage() {
       >
         <form onSubmit={assignForm.handleSubmit(onAssign)} className="p-6 space-y-4">
           <Input
-            label="ID сотрудника"
-            placeholder="UUID сотрудника"
+            label="UUID пользователя (users.id)"
+            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+            className="font-mono text-sm"
             error={assignForm.formState.errors.userId?.message}
             required
             {...assignForm.register('userId')}
           />
           <p className="text-xs text-neutral-500">
-            Введите UUID сотрудника из системы.
+            Тот же UUID, что у учётной записи для входа в WMS (таблица users).
           </p>
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="secondary" type="button" onClick={() => { setAssignTarget(null); assignForm.reset() }}>

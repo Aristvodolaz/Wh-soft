@@ -64,7 +64,10 @@ export class AnalyticsController {
 
   @Get('inventory')
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.ANALYST)
-  @ApiOperation({ summary: 'Сводка по инвентаризации — товары, ед. хранения, низкие остатки и отсутствие на складе' })
+  @ApiOperation({
+    summary:
+      'Сводка по инвентаризации — товары, ед. хранения, низкие остатки и отсутствие на складе',
+  })
   @ApiQuery({ name: 'warehouseId', type: String, required: true })
   @ApiOkResponse({ type: InventorySummaryDto })
   getInventorySummary(

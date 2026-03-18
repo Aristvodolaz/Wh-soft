@@ -21,10 +21,11 @@ export class AppException extends HttpException {
     this.details = details;
   }
 
-  static notFound(resource: string, id?: string): AppException {
+  static notFound(resource: string, id?: string, customMessage?: string): AppException {
+    const message = customMessage ?? (id ? `${resource} with id "${id}" not found` : `${resource} not found`);
     return new AppException(
       'RESOURCE_NOT_FOUND',
-      id ? `${resource} with id "${id}" not found` : `${resource} not found`,
+      message,
       HttpStatus.NOT_FOUND,
     );
   }

@@ -55,6 +55,11 @@ export const tasksApi = {
     return data
   },
 
+  claim: async (taskId: string): Promise<Task> => {
+    const { data } = await apiClient.post<Task>(`/tasks/${taskId}/claim`)
+    return data
+  },
+
   start: async (id: string): Promise<Task> => {
     const { data } = await apiClient.post<Task>(`/tasks/${id}/start`)
     return data

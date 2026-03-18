@@ -50,6 +50,9 @@ export interface TaskTypeBreakdown {
   failed: number
 }
 
+/** Backend KPI: completed count per task type (e.g. { PICK: 10, PACK: 3 }) */
+export type EmployeeKpiByTypeRecord = Partial<Record<string, number>>
+
 export interface EmployeeKpi {
   userId: string
   from: string
@@ -58,5 +61,6 @@ export interface EmployeeKpi {
   tasksFailed: number
   avgCompletionMinutes: number | null
   accuracyRate: number | null
-  byType: TaskTypeBreakdown[]
+  /** API: record of completed counts by type; tests may use TaskTypeBreakdown[] */
+  byType: TaskTypeBreakdown[] | EmployeeKpiByTypeRecord
 }

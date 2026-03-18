@@ -72,7 +72,9 @@ export class TasksController {
 
   @Get('overdue')
   @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER)
-  @ApiOperation({ summary: 'Список просроченных задач (срок выполнения истек, задача не завершена)' })
+  @ApiOperation({
+    summary: 'Список просроченных задач (срок выполнения истек, задача не завершена)',
+  })
   @ApiQuery({ name: 'warehouseId', type: String, required: false })
   @ApiOkResponse({ type: [TaskResponseDto] })
   getOverdue(
@@ -139,6 +141,24 @@ export class TasksController {
     @Query('type') type?: TaskType,
   ): Promise<TaskResponseDto> {
     return this.tasksService.autoAssign(user.tenantId, warehouseId, user.sub, type);
+  }
+
+  @Post(':taskId/claim')
+  @HttpCode(HttpStatus.OK)
+  @Roles(Role.SUPER_ADMIN, Role.WAREHOUSE_ADMIN, Role.MANAGER, Role.WORKER)
+  @ApiOperation({
+    summary: 'Забронировать задачу на себя',
+    description:
+      'Позволяет текущему пользователю забронировать конкретную задачу по UUID. ' +
+      'Задача должна быть в статусе PENDING.',
+  })
+  @ApiParam({ name: 'taskId', type: String })
+  @ApiOkResponse({ type: TaskResponseDto })
+  claimTask(
+    @CurrentUser() user: JwtPayload,
+    @Param('taskId', ParseUUIDPipe) taskId: string,
+  ): Promise<TaskResponseDto> {
+    return this.tasksService.claimTask(user.tenantId, taskId, user.sub);
   }
 
   // ── Lifecycle transitions ─────────────────────────────────────────────────────

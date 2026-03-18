@@ -9,6 +9,7 @@ import {
   TASK_TERMINAL_STATUSES,
 } from '../../domain/entities/task.entity';
 import { TaskFilters, TaskRepository } from '../../infrastructure/repositories/task.repository';
+import { UserRepository } from '../../../auth/infrastructure/repositories/user.repository';
 import { AssignTaskDto } from '../dto/assign-task.dto';
 import { CompleteTaskDto } from '../dto/complete-task.dto';
 import { CreateTaskDto } from '../dto/create-task.dto';
@@ -20,6 +21,7 @@ export class TasksService {
 
   constructor(
     private readonly taskRepository: TaskRepository,
+    private readonly userRepository: UserRepository,
     private readonly eventBus: EventBusService,
   ) {}
 
@@ -107,6 +109,21 @@ export class TasksService {
       );
     }
 
+    const user = await this.userRepository.findById(dto.userId, tenantId);
+    if (!user) {
+      throw AppException.notFound(
+        'User',
+        dto.userId,
+        'Пользователь с таким ID не найден в системе. Назначайте только на зарегистрированных пользователей.',
+      );
+    }
+
+    if (!user.isActive) {
+      throw AppException.unprocessable(
+        `Cannot assign task to inactive user ${dto.userId}`,
+      );
+    }
+
     const now = new Date();
     task.assignedTo = dto.userId;
     task.assignedAt = now;
@@ -136,6 +153,21 @@ export class TasksService {
     userId: string,
     type?: TaskType,
   ): Promise<TaskResponseDto> {
+    const user = await this.userRepository.findById(userId, tenantId);
+    if (!user) {
+      throw AppException.notFound(
+        'User',
+        userId,
+        'Текущий пользователь не найден в системе.',
+      );
+    }
+
+    if (!user.isActive) {
+      throw AppException.unprocessable(
+        `Cannot auto-assign task to inactive user ${userId}`,
+      );
+    }
+
     const task = await this.taskRepository.findNextPending(warehouseId, tenantId, type);
 
     if (!task) {
@@ -149,6 +181,52 @@ export class TasksService {
 
     const saved = await this.taskRepository.save(task);
     this.logger.log(`Task ${saved.id} auto-assigned to ${userId}`);
+
+    void this.eventBus.publish({
+      eventName: 'task.assigned',
+      occurredAt: now,
+      aggregateId: saved.id,
+      tenantId,
+      payload: { taskId: saved.id, assignedTo: userId, type: saved.type },
+    });
+
+    return this.toResponse(saved);
+  }
+
+  /**
+   * Claim a specific task by UUID — worker can self-assign a PENDING task.
+   */
+  async claimTask(tenantId: string, taskId: string, userId: string): Promise<TaskResponseDto> {
+    const task = await this.requireTask(tenantId, taskId);
+
+    if (task.status !== TaskStatus.PENDING) {
+      throw AppException.unprocessable(
+        `Task can only be claimed from PENDING status (current: ${task.status})`,
+      );
+    }
+
+    const user = await this.userRepository.findById(userId, tenantId);
+    if (!user) {
+      throw AppException.notFound(
+        'User',
+        userId,
+        'Текущий пользователь не найден в системе.',
+      );
+    }
+
+    if (!user.isActive) {
+      throw AppException.unprocessable(
+        `Cannot claim task with inactive user account ${userId}`,
+      );
+    }
+
+    const now = new Date();
+    task.assignedTo = userId;
+    task.assignedAt = now;
+    task.status = TaskStatus.ASSIGNED;
+
+    const saved = await this.taskRepository.save(task);
+    this.logger.log(`Task ${taskId} claimed by ${userId}`);
 
     void this.eventBus.publish({
       eventName: 'task.assigned',
