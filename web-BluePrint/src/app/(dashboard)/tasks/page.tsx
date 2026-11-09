@@ -81,7 +81,7 @@ export default function TasksPage() {
     defaultValues: {
       warehouseId: selectedWarehouseId ?? '',
       priority: TaskPriority.NORMAL,
-      type: TaskType.PICKING,
+      type: TaskType.PICK,
     },
   })
 

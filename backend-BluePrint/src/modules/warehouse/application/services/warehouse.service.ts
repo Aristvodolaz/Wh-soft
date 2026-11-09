@@ -30,7 +30,7 @@ export class WarehouseService {
   // ── Warehouse CRUD ──────────────────────────────────────────────────────────
 
   async listWarehouses(tenantId: string): Promise<WarehouseResponseDto[]> {
-    const warehouses = await this.warehouseRepository.findAllByTenant(tenantId);
+    const warehouses = await this.warehouseRepository.findAllByTenant(tenantId, true);
     return warehouses.map(this.toWarehouseResponse);
   }
 
@@ -85,7 +85,7 @@ export class WarehouseService {
     if (dto.city !== undefined) warehouse.city = dto.city ?? null;
     if (dto.country !== undefined) warehouse.country = dto.country ?? null;
     if (dto.timezone !== undefined) warehouse.timezone = dto.timezone;
-    if (dto.isActive !== undefined) warehouse.isActive = dto.isActive;
+    if (dto.isActive !== undefined && dto.isActive !== null) warehouse.isActive = dto.isActive;
     if (dto.settings !== undefined) warehouse.settings = dto.settings;
 
     const saved = await this.warehouseRepository.save(warehouse);

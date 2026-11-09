@@ -17,6 +17,7 @@ import { LocalStrategy } from './application/strategies/local.strategy';
 import { MobilePinStrategy } from './application/strategies/mobile-pin.strategy';
 
 import { AuthController } from './interface/controllers/auth.controller';
+import { UsersController } from './interface/controllers/users.controller';
 
 @Module({
   imports: [
@@ -37,7 +38,7 @@ import { AuthController } from './interface/controllers/auth.controller';
       }),
     }),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, UsersController],
   providers: [
     // Application layer
     AuthService,

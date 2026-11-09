@@ -96,7 +96,7 @@ export function Sidebar() {
           </div>
           {!collapsed && (
             <div className="min-w-0 flex-1">
-              <span className="font-semibold text-neutral-900 text-sm truncate block">WMS Platform</span>
+              <span className="font-semibold text-neutral-900 text-sm truncate block">Инвентум</span>
               {role && (
                 <span className={cn(
                   'inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full leading-none mt-0.5',

@@ -18,6 +18,7 @@ import { DatabaseModule } from './infrastructure/database/database.module';
 import { RedisModule } from './infrastructure/redis/redis.module';
 import { EventBusModule } from './infrastructure/event-bus/event-bus.module';
 import { MetricsModule } from './infrastructure/metrics/metrics.module';
+import { WebSocketModule } from './infrastructure/websocket/websocket.module';
 
 import { AuthModule } from './modules/auth/auth.module';
 import { WarehouseModule } from './modules/warehouse/warehouse.module';
@@ -26,6 +27,8 @@ import { OrdersModule } from './modules/orders/orders.module';
 import { EmployeesModule } from './modules/employees/employees.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { OptimizationModule } from './modules/optimization/optimization.module';
+import { SyncModule } from './modules/sync/sync.module';
 
 import { HealthModule } from './health/health.module';
 
@@ -61,6 +64,9 @@ import { HealthModule } from './health/health.module';
     // Event Bus
     EventBusModule,
 
+    // WebSocket Gateway (real-time events)
+    WebSocketModule,
+
     // Metrics (global — exposes GET /metrics in Prometheus text format)
     MetricsModule,
 
@@ -76,6 +82,8 @@ import { HealthModule } from './health/health.module';
     EmployeesModule,
     TasksModule,
     AnalyticsModule,
+    OptimizationModule,
+    SyncModule,
   ],
   providers: [
     // Global rate-limit guard

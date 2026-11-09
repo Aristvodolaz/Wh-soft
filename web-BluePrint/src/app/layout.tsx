@@ -4,10 +4,10 @@ import '@/styles/globals.css'
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | WMS Platform',
-    default: 'WMS Platform',
+    template: '%s | Инвентум',
+    default: 'Инвентум',
   },
-  description: 'Warehouse Management System',
+  description: 'Система управления складом',
 }
 
 export default function RootLayout({

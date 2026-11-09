@@ -7,7 +7,7 @@ import { Button } from '@/shared/ui/button'
 import { Badge } from '@/shared/ui/badge'
 import { Skeleton } from '@/shared/ui/skeleton'
 import { useScanBarcode } from '@/features/inventory/api/use-inventory'
-import { Barcode, Package, MapPin, AlertCircle, Camera, CameraOff } from 'lucide-react'
+import { Barcode, Package, MapPin, AlertCircle, Camera } from 'lucide-react'
 import { useAuthStore } from '@/features/auth/store/auth-store'
 
 interface ScanDialogProps {

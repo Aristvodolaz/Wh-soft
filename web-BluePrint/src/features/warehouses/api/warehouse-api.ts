@@ -26,8 +26,19 @@ export const warehouseApi = {
     return data
   },
 
-  update: async ({ id, ...dto }: UpdateWarehouseDto & { id: string }): Promise<Warehouse> => {
-    const { data } = await apiClient.patch<Warehouse>(`/warehouses/${id}`, dto)
+  update: async (payload: UpdateWarehouseDto & { id: string }): Promise<Warehouse> => {
+    const body: UpdateWarehouseDto = {
+      name: payload.name,
+      code: payload.code,
+      address: payload.address || undefined,
+      city: payload.city || undefined,
+      country: payload.country || undefined,
+      timezone: payload.timezone,
+    }
+    if (typeof payload.isActive === 'boolean') {
+      body.isActive = payload.isActive
+    }
+    const { data } = await apiClient.patch<Warehouse>(`/warehouses/${payload.id}`, body)
     return data
   },
 

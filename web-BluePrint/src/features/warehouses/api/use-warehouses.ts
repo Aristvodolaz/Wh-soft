@@ -1,7 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import axios from 'axios'
 import { warehouseApi } from './warehouse-api'
 import type { UpdateWarehouseDto, CreateZoneDto, BulkCreateCellsDto } from '@/entities/warehouse/types'
 import toast from 'react-hot-toast'
+
+function apiErrorMessage(err: unknown, fallback: string): string {
+  if (!axios.isAxiosError(err)) return fallback
+  const message = err.response?.data?.message
+  if (Array.isArray(message)) return message.join(', ')
+  if (typeof message === 'string' && message.length > 0) return message
+  return fallback
+}
 
 export const warehouseKeys = {
   all: ['warehouses'] as const,
@@ -47,7 +56,7 @@ export function useUpdateWarehouse() {
       qc.invalidateQueries({ queryKey: warehouseKeys.detail(vars.id) })
       toast.success('Склад обновлён')
     },
-    onError: () => toast.error('Ошибка обновления'),
+    onError: (err) => toast.error(apiErrorMessage(err, 'Ошибка обновления')),
   })
 }
 

@@ -16,7 +16,7 @@ export default function LoginPage() {
               <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-neutral-900">WMS Platform</h1>
+          <h1 className="text-2xl font-bold text-neutral-900">Инвентум</h1>
           <p className="text-sm text-neutral-500 mt-1">Система управления складом</p>
         </div>
 
@@ -27,7 +27,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-xs text-neutral-400 mt-6">
-          WMS Platform © {new Date().getFullYear()}
+          Инвентум © {new Date().getFullYear()}
         </p>
       </div>
     </div>

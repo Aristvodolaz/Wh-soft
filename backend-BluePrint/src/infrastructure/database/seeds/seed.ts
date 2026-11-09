@@ -1,8 +1,14 @@
 /**
- * Database Seeder — creates the initial tenant and super-admin user.
+ * Database Seeder — creates the initial tenant, users, warehouse, and demo data.
  *
  * Usage:
  *   npm run db:seed
+ *
+ * Demo org for screenshots (tenant: blueprint-log):
+ *   Admin:   dmytro.admin@blueprint.com  / Password123!
+ *   Manager: ivan.manager@blueprint.com  / Password123!
+ *   Worker:  stepan.worker@blueprint.com / Password123!
+ *   Analyst: olena.analyst@blueprint.com / Password123!
  *
  * Environment:
  *   Requires a valid .env file with DB_* variables.
@@ -17,6 +23,7 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 import * as bcrypt from 'bcryptjs';
 import { AppDataSource } from '../data-source';
+import { seedDemoData } from './seed-demo-data';
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
@@ -157,6 +164,7 @@ async function seed(): Promise<void> {
     // ── Create Zone ───────────────────────────────────────────────────────────
     const zoneName = 'General Storage Zone';
     const zoneCode = 'GS-01';
+    let storageZoneId: string;
 
     const existingZone = await queryRunner.query(
       `SELECT id FROM zones WHERE warehouse_id = $1 AND code = $2 LIMIT 1`,
@@ -164,13 +172,16 @@ async function seed(): Promise<void> {
     );
 
     if (existingZone.length > 0) {
+      storageZoneId = existingZone[0].id;
       console.log(`[Seed] Zone "${zoneCode}" already exists.`);
     } else {
-      await queryRunner.query(
+      const [newZone] = await queryRunner.query(
         `INSERT INTO zones (tenant_id, warehouse_id, name, code, type)
-         VALUES ($1, $2, $3, $4, 'STORAGE')`,
+         VALUES ($1, $2, $3, $4, 'STORAGE')
+         RETURNING id`,
         [testTenantId, warehouseId, zoneName, zoneCode],
       );
+      storageZoneId = newZone.id;
       console.log(`[Seed] ✓ Zone created: "${zoneName}" (code: ${zoneCode})`);
     }
 
@@ -178,6 +189,9 @@ async function seed(): Promise<void> {
     const employeesData = [
       { email: managerEmail, firstName: 'Ivan', lastName: 'Manager', role: 'MANAGER' },
       { email: workerEmail, firstName: 'Stepan', lastName: 'Worker', role: 'WORKER' },
+      { email: 'mariya.worker@blueprint.com', firstName: 'Mariya', lastName: 'Petrenko', role: 'WORKER' },
+      { email: 'andriy.worker@blueprint.com', firstName: 'Andriy', lastName: 'Kostenko', role: 'WORKER' },
+      { email: 'sergiy.worker@blueprint.com', firstName: 'Sergiy', lastName: 'Melnyk', role: 'WORKER' },
     ];
 
     for (const emp of employeesData) {
@@ -198,6 +212,42 @@ async function seed(): Promise<void> {
         console.log(`[Seed] Employee "${emp.email}" already exists.`);
       }
     }
+
+    // ── Resolve user IDs for demo data ────────────────────────────────────────
+    const [adminRow] = await queryRunner.query(
+      `SELECT id FROM users WHERE tenant_id = $1 AND email = $2 LIMIT 1`,
+      [testTenantId, warehouseAdminEmail],
+    );
+    const [managerRow] = await queryRunner.query(
+      `SELECT id FROM users WHERE tenant_id = $1 AND email = $2 LIMIT 1`,
+      [testTenantId, managerEmail],
+    );
+    const [workerRow] = await queryRunner.query(
+      `SELECT id FROM users WHERE tenant_id = $1 AND email = $2 LIMIT 1`,
+      [testTenantId, workerEmail],
+    );
+    const workerRows = await queryRunner.query(
+      `SELECT id FROM users WHERE tenant_id = $1 AND role = 'WORKER' ORDER BY created_at`,
+      [testTenantId],
+    );
+    const [analystRow] = await queryRunner.query(
+      `SELECT id FROM users WHERE tenant_id = $1 AND email = $2 LIMIT 1`,
+      [testTenantId, 'olena.analyst@blueprint.com'],
+    );
+
+    // ── Demo data: products, inventory, orders, tasks ─────────────────────────
+    await seedDemoData(queryRunner, {
+      tenantId: testTenantId,
+      warehouseId,
+      storageZoneId,
+      userIds: {
+        admin: adminRow.id,
+        manager: managerRow.id,
+        worker: workerRow.id,
+        workers: workerRows.map((r: { id: string }) => r.id),
+        analyst: analystRow?.id ?? managerRow.id,
+      },
+    });
 
     await queryRunner.commitTransaction();
     console.log('[Seed] ✓ Seed complete.');

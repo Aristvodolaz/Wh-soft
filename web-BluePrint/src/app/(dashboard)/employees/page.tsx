@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEmployeeStore, type EmployeeProfile } from '@/features/employees/store/employee-store'
+import { useUsers } from '@/features/users/api/use-users'
 import { useEmployeeKpi } from '@/features/analytics/api/use-analytics'
 import { useTasks, useAssignTask } from '@/features/tasks/api/use-tasks'
 import { Card, CardHeader, CardContent } from '@/shared/ui/card'
@@ -21,7 +22,7 @@ import {
 import {
   Users, Search, CheckCircle, XCircle, Clock, Target,
   Plus, Pencil, Trash2, BarChart2, ListTodo, UserCircle,
-  Filter, X, Zap, ClipboardList, Shuffle, Copy, Check,
+  X, Zap, ClipboardList, Shuffle, Copy, Check,
 } from 'lucide-react'
 import { formatDate } from '@/shared/lib/format'
 import type { EmployeeKpi } from '@/entities/analytics/types'
@@ -753,7 +754,25 @@ export default function EmployeesPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { employees, addEmployee, updateEmployee, removeEmployee } = useEmployeeStore()
+  const { data: tenantUsers } = useUsers()
   const { data: tasks } = useTasks()
+
+  // Sync backend users into local employee registry when empty
+  useEffect(() => {
+    if (employees.length > 0 || !tenantUsers?.length) return
+    for (const u of tenantUsers) {
+      if (!u.email) continue
+      addEmployee({
+        id: u.id,
+        firstName: u.firstName,
+        lastName: u.lastName,
+        email: u.email,
+        role: u.role,
+        isActive: u.isActive,
+        hiredAt: u.createdAt.slice(0, 10),
+      })
+    }
+  }, [employees.length, tenantUsers, addEmployee])
 
   const [search, setSearch] = useState('')
   const [showAdd, setShowAdd] = useState(false)
